@@ -29,6 +29,18 @@
       
 ;assume predicate separable exists 
 
+(defun point-elliptic-curve(a b x y)
+  (equal (* y y)
+         (+ (* x x x)
+            (* a x)
+            b)))  
+(defun power(x q)
+  (if (zp q)
+      1
+    (* x (pow x (- q 1)))))
 
-     
-      
+(defun eval-frobenius (x y q)
+  (list (power(x q) power(y q))))
+
+
+
