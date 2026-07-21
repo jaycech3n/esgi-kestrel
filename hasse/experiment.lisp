@@ -4,8 +4,8 @@
     (+ (car coeffs)
        (* x (eval-poly (cdr coeffs) x)))))
 
-(defun eval-ratfun (num den x)
-  (/ (eval-poly num x)
+(defun eval-ratfun (num1 num2 den x y)
+  (/ (+(eval-poly num1 x) (* y (eval-poly num2 x)))
      (eval-poly den x)))
 
 (defun degree(p n)
