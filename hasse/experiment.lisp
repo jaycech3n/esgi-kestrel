@@ -62,8 +62,8 @@
 ;; addition mod p
   (local (defun f+mod-p (x y p) (mod (+ x y) p))
 
-;; addition mod p^n (polynomials with coefficients in F_p)
-(local (defun f+mod-pn (x y p n) 
+;; addition mod p^n (polynomials with coefficients in F_p) modulo q
+(local (defun f+mod-pn (f g p q) (
 		 
   (local (defun f* (x y) (* x y)))
   (local (defun f0 () 0))
