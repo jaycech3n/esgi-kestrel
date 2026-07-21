@@ -13,3 +13,11 @@
       -1
     (max (if (equal (car p) 0) -1 n)
          (degree-aux (cdr p) (+ 1 n)))))
+
+(defun degreerat(num den)
+  (max(degree num)
+        (degree den)))
+
+
+
+      
