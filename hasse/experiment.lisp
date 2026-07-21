@@ -1,46 +1,48 @@
+;; evaluate polynomial (a_0,a_1, \dots, a_n) at x where a_i are coefficients
 (defun eval-poly (coeffs x)
   (if (endp coeffs)
       0
     (+ (car coeffs)
        (* x (eval-poly (cdr coeffs) x)))))
-
+;; evaluate a rational function of the form (p_1(x)+y*p_2(x))/q(x)
 (defun eval-ratfun (num1 num2 den x y)
   (/ (+ (eval-poly num1 x) (* y (eval-poly num2 x)))
      (eval-poly den x)))
 
+;; degree of a polynomial 
 (defun degree(p n)
   (if (endp p)
       -1
     (max (if (equal (car p) 0) -1 n)
          (degree (cdr p) (+ 1 n)))))
-
-;; 
+;; degree of rational function of the form (p_1(x)+y*p_2(x))/q(x)
 (defun degreerat(num1 num2 den)
   (max( (max(degree num1)
         (degree den))
       (+ (degree num2) 1) )
-
+;; evaluate an endomorphism of the form (x,y) \mapsto (p_1(x)/q_1(x), p_2(x)/q_2(x)*y)
 (defun eval-end(num1 num2 den1 den2 x y)
   (list (/ (eval-poly num1 x) (eval-poly den1 x))
             (* y (/ (eval-poly num2 x) (eval-poly den2 x)))))
-
+;; definition of degree of endomorphism = degree of first component funciton
 (defun degree-end(num1 num2 den1 den2)
   (max(degree num1)
       (degree den1)))
       
 ;;assume predicate separable exists 
 
+;; check whether point (x,y) lies on the elliptic curve y^2=x^3+ax+b
 (defun point-elliptic-curve(a b x y)
   (equal (* y y)
          (+ (* x x x)
             (* a x)
             b)))  
-      
+;; take x to the power of q     
 (defun power(x q)
   (if (zp q)
       1
     (* x (pow x (- q 1)))))
-
+;; evaluate the Frobenius map (x,y) \mapsto (x^q,y^q)
 (defun eval-frobenius (x y q)
   (list (power(x q) power(y q))))
 
