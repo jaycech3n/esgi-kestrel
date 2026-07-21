@@ -52,8 +52,19 @@
               ((f+ * *) => *) ((f* * *) => *) ;addition and multiplication
 	      ((f0) => *) ((f1) => *)         ;identities
 	      ((f- *) => *) ((f/ *) => *))    ;inverses 
-  (local (defun fp (x finitefield) ( )))
-  (local (defun f+ (x y) (+ x y)))
+;; define finitefield: x is element of a list of field elements			 
+(local (defun fp (x finitefield)
+			 (if (endp finitefield)
+				 nil
+			 	(if (equal x (car finitefield))
+						t
+				 fp x (cdr finitefield)))))
+;; addition mod p
+  (local (defun f+mod-p (x y p) (mod (+ x y) p))
+
+;; addition mod p^n (polynomials with coefficients in F_p)
+(local (defun f+mod-pn (x y p n) 
+		 
   (local (defun f* (x y) (* x y)))
   (local (defun f0 () 0))
   (local (defun f1 () 1))
