@@ -15,10 +15,20 @@
          (degree (cdr p) (+ 1 n)))))
 
 (defun degreerat(num1 num2 den)
-  (max(degree num1)
-        (degree den)
+  (max( (max(degree num1)
+        (degree den))
       (+ (degree num2) 1) )
 
+(defun eval-end(num1 num2 den1 den2 x y)
+  (list (/ (eval-poly num1 x) (eval-poly den1 x))
+            (* y (/ (eval-poly num2 x) (eval-poly den2 x)))))
+
+(defun degree-end(num1 num2 den1 den2)
+  (max(degree num1)
+      (degree den1)))
+      
+;assume predicate separable exists 
 
 
+     
       
