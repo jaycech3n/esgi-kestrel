@@ -179,14 +179,30 @@
                  (equal (ec-add (ec-neg point a b) point a b)
                         :infinity))))
 
- ; The cancellation form needed to identify kernels.
- (defthm ec-subtract-equal-iff
-   (implies (and (ec-group-p a b)
-                 (on-curve-p point1 a b)
-                 (on-curve-p point2 a b))
-            (iff (equal (ec-add point1 (ec-neg point2 a b) a b)
-                        :infinity)
-                 (equal point1 point2)))))
+ )
+
+; This is a consequence of the group laws, rather than an additional
+; constraint on EC-ADD and EC-NEG.  It is the cancellation fact needed to
+; identify the kernel of Frobenius minus the identity.
+(defthm ec-subtract-equal-iff
+  (implies (and (ec-group-p a b)
+                (on-curve-p point1 a b)
+                (on-curve-p point2 a b))
+           (iff (equal (ec-add point1 (ec-neg point2 a b) a b)
+                       :infinity)
+                (equal point1 point2)))
+  :hints (("Goal"
+           :in-theory (disable on-curve-p
+                               ec-add-associative
+                               ec-add-identity
+                               ec-add-inverse)
+           :use ((:instance ec-add-associative
+                            (point1 point1)
+                            (point2 (ec-neg point2 a b))
+                            (point3 point2))
+                 (:instance ec-add-identity (point point1))
+                 (:instance ec-add-identity (point point2))
+                 (:instance ec-add-inverse (point point2))))))
 
 ; -----------------------------------------------------------------------------
 ; Algebraic normalization lemmas used in the curve calculation.
