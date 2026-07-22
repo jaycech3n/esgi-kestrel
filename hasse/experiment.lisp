@@ -53,22 +53,26 @@
 	      ((f0) => *) ((f1) => *)         ;identities
 	      ((f- *) => *) ((f/ *) => *))    ;inverses 
 ;; define finitefield: x is element of a list of field elements			 
-(local (defun fp (x finitefield)
-			 (if (endp finitefield)
-				 nil
-			 	(if (equal x (car finitefield))
-						t
-				 fp x (cdr finitefield)))))
+(local (defun fp (x p)
+  (and (integerp x)
+       (<= 0 x)
+       (< x p)))
 ;; addition mod p
-  (local (defun f+mod-p (x y p) (mod (+ x y) p))
-
-;; addition mod p^n (polynomials with coefficients in F_p) modulo q
-(local (defun f+mod-pn (f g p q) (
-		 
-  (local (defun f* (x y) (* x y)))
+  (local (defun f+ (x y p) (mod (+ x y) p))
+  (local (defun f* (x y) (mod (* x y) p))
   (local (defun f0 () 0))
   (local (defun f1 () 1))
-  (local (defun f- (x) (- x)))
+  (local (defun f- (x) ((mod(- x) p))
+(defun eucl-alg (a b)
+  (if (equal b 0)
+      (list a 1 0)
+    (let* ((rec (eucl-alg b (mod a b)))
+           (g (car rec))
+           (s (cadr rec))
+           (t (caddr rec)))
+      (list g
+            t
+            (- s (* (floor a b) t))))))
   (local (defun f/ (x) (/ x)))
   ;; Closure:
   (defthm f+closed (implies (and (fp x) (fp y)) (fp (f+ x y))))
@@ -93,6 +97,6 @@
   ;; Distributivity:
   (defthm fdist (implies (and (fp x) (fp y) (fp z)) (equal (f* x (f+ y z)) (f+ (f* x y) (f* x z))))))
 
-      
+
 
 
