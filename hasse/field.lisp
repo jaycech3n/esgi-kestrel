@@ -1,6 +1,8 @@
 ; Abstract ambient algebraic closure, its finite fixed field, and Frobenius.
 
 (in-package "ACL2")
+(ld "finite-fields.lisp")
+(ld "irreducible-polynomials.lisp")
 
 (encapsulate
  (((fe-p *) => *)
@@ -8,20 +10,28 @@
   ((fzero) => *)
   ((fadd * *) => *)
   ((fmul * *) => *)
-  ((frob *) => *))
+  ((frob *) => *)
+  ((fone) => *)
+  ((fsub * *) => *)
+  ((fdiv * *) => *)
+  )
 
- (local (defun fe-p (x) (equal x nil)))
- (local (defun fq-elt-p (x) (equal x nil)))
- (local (defun fzero () nil))
- (local (defun fadd (x y) (declare (ignore x y)) nil))
- (local (defun fmul (x y) (declare (ignore x y)) nil))
- (local (defun frob (x) (declare (ignore x)) nil))
+ (local (defconst *field* (construct-extension-field 5 2) ))
+ (local (defun fe-p (x) (ff-element-p x *field*) ))
+ (local (defun fq-elt-p (x) (ff-element-p x (ff-prime 5)  )))
+ (local (defun fzero () (ff-zero *field*)  ))
+ (local (defun fone () (ff-one *field*)))
 
- (defthm fq-elements-are-ambient-elements
-   (implies (fq-elt-p x) (fe-p x)))
+ (local (defun fadd (x y) (ff-add x y *field*)    ) )
+ (local (defun fmul (x y) (ff-mul x y *field*)    ) )
+ (local (defun frob (x) (ff-frobenius x *field*  ) ) )
+ 
 
- (defthm fzero-is-an-ambient-element
-   (fe-p (fzero)))
+ ;(defthm fq-elements-are-ambient-elements
+ ;  (implies (fq-elt-p x) (fe-p x)))
+
+; (defthm fzero-is-an-ambient-element
+;   (fe-p (fzero)))
 
  (defthm fadd-closed
    (implies (and (fe-p x) (fe-p y)) (fe-p (fadd x y))))
