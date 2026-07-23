@@ -3,6 +3,8 @@
 (ld "F2.lisp")
 
 ;;; Finite fields
+
+;; Structure and axioms of a finite field
 (encapsulate (;; Field structure
               ((fp *) => *)
               ((f+ * *) => *) ((f0) => *) ((f- *) => *)
@@ -55,5 +57,6 @@
     (implies (fp x) (finp (expt (base) (exponent)) (code x))))
   (defthm finiteness2
     (implies (finp (expt (base) (exponent)) n) (fp (decode n)))))
+
 
 ;; Theorems about finite fields
