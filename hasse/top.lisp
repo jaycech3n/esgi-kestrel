@@ -9,4 +9,5 @@
 
 (ld "polynomials.lisp")
 (ld "F2.lisp")
+(ld "primes.lisp")
 (ld "finite-fields.lisp")
