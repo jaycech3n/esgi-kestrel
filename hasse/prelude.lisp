@@ -8,9 +8,11 @@
   (declare (type (satisfies natp) a b x))
   (and (<= a x) (< x b)))
 
-(defthm in-rangep-0-2-vals
-  (implies (and (natp x) (in-rangep 0 2 x))
-           (or (= x 0) (= x 1))))
+; "x is a natural in the range [0, n)"
+(defun finp (n x)
+  (declare (type (satisfies natp) n))
+  (and (natp x) (in-rangep 0 n x)))
+
 
 ;; Lists
 
