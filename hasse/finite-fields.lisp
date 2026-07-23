@@ -50,6 +50,7 @@
   (defthmd f*assoc  (implies (and (fp x) (fp y) (fp z)) (equal (f* x (f* y z)) (f* (f* x y) z))))
 
   ; Finiteness axioms
+
   (defthm base-is-prime (dm::primep (base))
     :hints (("Goal" :in-theory (enable dm::primep))))
 
@@ -65,3 +66,5 @@
 
 
 ;; Theorems about finite fields
+
+

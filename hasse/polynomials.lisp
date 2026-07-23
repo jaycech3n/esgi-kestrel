@@ -3,13 +3,27 @@
 (ld "prelude.lisp")
 
 ;;; Univariate polynomials over an unspecified field.
+
 ;   A polynomial over a field K is simply a list of coefficients,
 ;   each of which is supposed to be an element of K.
 ;   The entry at index k is the coefficient of x^k.
+;
+;   Because the field is arbitrary, every function we write takes
+;   the appropriate required field components as arguments.
 
-(defun poly (coeffs) (reverse coeffs))
+
+; "Constructors" for polynomials
 (defun zeropoly () nil)
+; This lets us write the coefficients in order of decreasing degree.
+(defun poly (coeffs) (reverse coeffs))
 
-; z is the zero of the field
-(defun deg (p z) (pred (len (dropValsFromEnd z p))))
+; (Removes trailing zeros. f0 is the zero of the field.)
+(defun norm-poly (f0 p) (dropValsFromEnd f0 p))
 
+(defun is-zeropoly (f0 p) (endp (norm-poly f0 p)))
+(defun is-poly-over (fp p)
+  (or (endp p)
+      (and (fp (car p))
+           (is-poly-over fp (cdr p)))))
+
+(defun deg (f0 p) (pred (len (norm-poly f0 p))))
