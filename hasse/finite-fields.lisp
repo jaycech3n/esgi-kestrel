@@ -28,9 +28,11 @@
 
   ; Finiteness axioms
   (defthm code-decode-bij
-    (and (equal (decode (code x)) x) (equal (code (decode n)) n)))
+    (implies (and (inF2 x) (natp n))
+             (and (equal (decode (code x)) x) (equal (code (decode n)) n))))
 
   (defthm finiteness
-    (iff (fp x) (in-rangep (expt (base) (exponent)) (code x)))
-    :hints (("Goal" :use in-rangep-2-vals))))
+    (implies (inF2 x)
+             (iff (fp x) (in-rangep 0 (expt (base) (exponent)) (code x))))
+    :hints (("Goal" :use in-rangep-0-2-vals))))
 

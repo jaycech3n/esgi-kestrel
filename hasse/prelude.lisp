@@ -3,9 +3,14 @@
 (defun succ (n) (declare (type (satisfies natp) n)) (+ n 1))
 (defun pred (n) (declare (type (satisfies natp) n)) (- n 1))
 
-;; Logic
+; A natural number "range" is a half-open interval.
+(defun in-rangep (a b x)
+  (declare (type (satisfies natp) a b x))
+  (and (<= a x) (< x b)))
 
-(defthmd iff-intro (equal (iff P Q) (and (implies P Q) (implies Q P))))
+(defthm in-rangep-0-2-vals
+  (implies (and (natp x) (in-rangep 0 2 x))
+           (or (= x 0) (= x 1))))
 
 ;; Lists
 
@@ -17,19 +22,3 @@
 
 (defun dropValsFromEnd (v l)
   (reverse (dropVals v (reverse l))))
-
-; Ranges and some lemmas
-
-(defun range-aux (n l)
-  (declare (type (satisfies natp) n))
-  (if (zp n) l (range-aux (pred n) (cons (pred n) l))))
-
-(defun range (n)
-  (declare (type (satisfies natp) n))
-  (range-aux n nil))
-
-(defun in-rangep (n x)
-  (and (<= 0 x) (< x n)))
-
-; Prove this at some point.
-(defaxiom in-rangep-2-vals (implies (in-rangep 2 x) (or (= x 0) (= x 1))))
