@@ -73,7 +73,12 @@
       (list g
             t
             (- s (* (floor a b) t))))))
-  (local (defun f/ (x) (/ x)))
+(local (defun f/ (x) (
+  (if (equal (mod a p) 0)
+      nil
+    (let* ((res (eucl-alg a p))
+           (x   (cadr res)))
+      (mod x p))))
   ;; Closure:
   (defthm f+closed (implies (and (fp x) (fp y)) (fp (f+ x y))))
   (defthm f*closed (implies (and (fp x) (fp y)) (fp (f* x y))))
@@ -96,6 +101,8 @@
   (defthm f*inv (implies (and (fp x) (not (equal x (f0)))) (equal (f* x (f/ x)) (f1))))
   ;; Distributivity:
   (defthm fdist (implies (and (fp x) (fp y) (fp z)) (equal (f* x (f+ y z)) (f+ (f* x y) (f* x z))))))
+;; Characteristic p:
+
 
 
 
