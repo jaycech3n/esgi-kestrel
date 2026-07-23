@@ -1,3 +1,5 @@
+;(include-book "arithmetic-5/top" :dir :system) 
+
 ;; evaluate polynomial (a_0,a_1, \dots, a_n) at x where a_i are coefficients
 (defun eval-poly (coeffs x)
   (if (endp coeffs)
@@ -69,6 +71,7 @@
 
 ;; definition of field from acl2/books/projects/linear/field.lisp
 
+
 (encapsulate (((fp *) => *)                   ;field element recognizer
               ((f+ * *) => *) ((f* * *) => *) ;addition and multiplication
 	      ((f0) => *) ((f1) => *)         ;identities
@@ -93,8 +96,8 @@
                       (x   (cadr res)))
                  (mod x p)))))
                                  ;; Closure:
-     (defthm f+closed (implies (and (fp x p) (fp y p)) (fp (f+ x y p))))
-     (defthm f*closed (implies (and (fp x p) (fp y p)) (fp (f* x y p))))
+     (defthm f+closed (implies (and (fp x p) (fp y p)) (fp (f+ x y p) p)))
+     (defthm f*closed (implies (and (fp x p) (fp y p)) (fp (f* x y p) p)))
                                  ;; Commutativity
      (defthmd f+comm (implies (and (fp x p) (fp y p)) (equal (f+ x y p ) (f+ y
            x p))))
