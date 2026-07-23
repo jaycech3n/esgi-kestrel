@@ -102,7 +102,15 @@
   ;; Distributivity:
   (defthm fdist (implies (and (fp x) (fp y) (fp z)) (equal (f* x (f+ y z)) (f+ (f* x y) (f* x z))))))
 ;; Characteristic p:
-
+(defthm characteristic-p
+  (equal (n*f1 p)
+         (f0)))
+(defthm characteristic-p-minimal
+  (implies (and (natp n)
+                (< 0 n)
+                (< n p))
+           (not (equal (n*f1 n)
+                       (f0)))))
 
 
 
