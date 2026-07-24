@@ -50,6 +50,21 @@ ascending order, of degree less than `degree(modulus)`.  Addition is
 coefficientwise modulo `p`; multiplication is polynomial multiplication followed
 by reduction modulo the monic modulus.
 
+`pf-polynomial-p` makes the canonical-representative invariant explicit: the
+object is a true list, every coefficient is a canonical element of `F_p`, and
+there are no trailing zero coefficients.  `ff-element-p` additionally requires
+an extension-field representative to be shorter than the normalized modulus.
+This direct invariant replaced the earlier indirect test
+`x = ff-normalize(x)`, which made even addition closure depend on proving the
+full idempotence specification of polynomial long division.
+
+ACL2 now proves `ff-add-closed` for every descriptor accepted by `ff-field-p`.
+For prime fields this follows from the standard bounds on `mod`.  For extension
+fields, coefficientwise addition preserves canonical coefficients and cannot
+increase the maximum input length.  Consequently, two representatives of
+degree below the modulus remain below it; polynomial division is neither
+mathematically necessary nor executed by `ff-add`.
+
 `ff-field-p` requires the modulus to be monic and to pass
 `pf-irreducible-p`.  The current executable checker handles degrees 1, 2, and
 3; in degrees 2 and 3, absence of a base-field root is equivalent to

@@ -41,7 +41,8 @@ Points use:
 
 - arithmetic in `F_5`;
 - construction and enumeration of `F_4`;
-- addition, multiplication, inversion, and Frobenius in `F_4`;
+- canonical extension-field representatives and closure of addition in `F_4`;
+- multiplication, inversion, and Frobenius in `F_4`;
 - polynomial normalization, arithmetic, evaluation, and reduction;
 - arbitrary-degree irreducibility search and construction of `F_16`;
 - checked quotient/remainder certificates;

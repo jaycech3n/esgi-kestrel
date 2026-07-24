@@ -32,6 +32,14 @@
 (assert-event (member-equal nil (ff-elements *example-f4*)))
 (assert-event (member-equal '(1) (ff-elements *example-f4*)))
 (assert-event (member-equal *example-t* (ff-elements *example-f4*)))
+(assert-event (pf-polynomial-p *example-t* 2))
+(assert-event (ff-element-p *example-t* *example-f4*))
+
+; Addition stays in the canonical representative set without long division.
+(assert-event
+ (equal (ff-add *example-t* '(1 1) *example-f4*) '(1)))
+(assert-event
+ (ff-element-p (ff-add *example-t* '(1 1) *example-f4*) *example-f4*))
 
 ; T^2 = T+1 modulo T^2+T+1 in characteristic 2.
 (assert-event

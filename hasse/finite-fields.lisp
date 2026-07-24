@@ -2,11 +2,19 @@
 
 (in-package "ACL2")
 
+(include-book "kestrel/arithmetic-light/mod" :dir :system)
+
 (defun pf-normalize (x p)
   (mod (ifix x) (if (and (integerp p) (< 1 p)) p 2)))
 
 (defun pf-element-p (x p)
   (and (natp x) (natp p) (< 1 p) (< x p)))
+
+(defthm pf-element-p-of-pf-normalize
+  (implies (and (natp p) (< 1 p))
+           (pf-element-p (pf-normalize x p) p))
+  :hints (("Goal"
+           :in-theory (enable pf-element-p pf-normalize))))
 
 (defun no-divisor-at-or-below-p (p d)
   (if (or (not (natp d)) (< d 2))
@@ -25,6 +33,17 @@
       (if (and (endp rest) (equal (car poly) 0))
           nil
         (cons (car poly) rest)))))
+
+(defun pf-poly-coefficients-p (poly p)
+  (if (endp poly)
+      (equal poly nil)
+    (and (pf-element-p (car poly) p)
+         (pf-poly-coefficients-p (cdr poly) p))))
+
+(defun pf-polynomial-p (poly p)
+  (and (true-listp poly)
+       (pf-poly-coefficients-p poly p)
+       (equal (pf-poly-trim poly) poly)))
 
 (defun pf-poly-normalize (poly p)
   (if (endp poly)
@@ -46,6 +65,46 @@
                               (if (consp y) (car y) 0)) p)
            (pf-poly-add (if (consp x) (cdr x) nil)
                         (if (consp y) (cdr y) nil) p)))))
+
+(defthm pf-poly-coefficients-p-of-pf-poly-trim
+  (implies (pf-poly-coefficients-p x p)
+           (pf-poly-coefficients-p (pf-poly-trim x) p))
+  :hints (("Goal" :induct (pf-poly-trim x))))
+
+(defthm pf-poly-trim-idempotent
+  (equal (pf-poly-trim (pf-poly-trim x))
+         (pf-poly-trim x))
+  :hints (("Goal" :induct (pf-poly-trim x))))
+
+(defthm pf-poly-coefficients-p-of-pf-poly-add
+  (implies (and (natp p) (< 1 p))
+           (pf-poly-coefficients-p (pf-poly-add x y p) p))
+  :hints (("Goal" :induct (pf-poly-add x y p))))
+
+(defthm pf-polynomial-p-of-pf-poly-add
+  (implies (and (natp p) (< 1 p))
+           (pf-polynomial-p (pf-poly-add x y p) p))
+  :hints (("Goal"
+           :in-theory (enable pf-polynomial-p))))
+
+(defthm len-of-pf-poly-trim-upper-bound
+  (<= (len (pf-poly-trim x)) (len x))
+  :rule-classes :linear
+  :hints (("Goal" :induct (pf-poly-trim x))))
+
+(defthm len-of-pf-poly-add-upper-bound
+  (<= (len (pf-poly-add x y p))
+      (max (len x) (len y)))
+  :rule-classes :linear
+  :hints (("Goal" :induct (pf-poly-add x y p))))
+
+(defthm len-of-pf-poly-add-when-inputs-bounded
+  (implies (and (< (len x) n)
+                (< (len y) n))
+           (< (len (pf-poly-add x y p)) n))
+  :hints (("Goal"
+           :use len-of-pf-poly-add-upper-bound
+           :cases ((<= (len x) (len y))))))
 
 (defun pf-poly-neg (x p)
   (if (endp x)
@@ -155,8 +214,10 @@
 
 (defun ff-element-p (x field)
   (if (equal (ff-kind field) :extension)
-      (and (true-listp x)
-           (equal x (ff-normalize x field)))
+      (and (pf-polynomial-p x (ff-characteristic field))
+           (< (len x)
+              (len (pf-poly-normalize (ff-modulus field)
+                                      (ff-characteristic field)))))
     (pf-element-p x (ff-characteristic field))))
 
 (defun ff-zero (field) (if (equal (ff-kind field) :extension) nil 0))
@@ -164,9 +225,17 @@
 
 (defun ff-add (x y field)
   (if (equal (ff-kind field) :extension)
-      (pf-poly-mod (pf-poly-add x y (ff-characteristic field))
-                   (ff-modulus field) (ff-characteristic field))
+      ;; Reduced representatives are closed under coefficientwise addition:
+      ;; addition cannot increase their degree, so no polynomial division is
+      ;; needed here.
+      (pf-poly-add x y (ff-characteristic field))
     (pf-normalize (+ (ifix x) (ifix y)) (ff-characteristic field))))
+
+(defthm ff-add-closed
+  (implies (and (ff-field-p field)
+                (ff-element-p x field)
+                (ff-element-p y field))
+           (ff-element-p (ff-add x y field) field)))
 
 (defun ff-neg (x field)
   (if (equal (ff-kind field) :extension)
