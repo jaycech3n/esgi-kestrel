@@ -21,9 +21,5 @@
 (defun norm-poly (f0 p) (dropValsFromEnd f0 p))
 
 (defun is-zeropoly (f0 p) (endp (norm-poly f0 p)))
-(defun is-poly-over (fp p)
-  (or (endp p)
-      (and (fp (car p))
-           (is-poly-over fp (cdr p)))))
 
 (defun deg (f0 p) (pred (len (norm-poly f0 p))))
