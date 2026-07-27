@@ -29,6 +29,9 @@
 (defun pf-normalize (x p)
   (mod (ifix x) (if (and (integerp p) (< 1 p)) p 2)))
 
+; pf-normalize is idempotent
+(defthm pf-normalize-idempotent
+ (equal (pf-normalize (pf-normalize x p) p) (pf-normalize x p)))
 
 ; Is x an element of the prime field?
 ; Returns T if x if x and p are natural numbers with 1 < p and 0 <= x < p.
@@ -64,7 +67,7 @@
     (let ((rest (pf-poly-trim (cdr poly))))
       (if (and (endp rest) (equal (car poly) 0))
           nil
-        (cons (car poly) rest)))))
+          (cons (car poly) rest)))))
 
 ; Do the cofficients of the polynomial poly belong to the prime field?
 (defun pf-poly-coefficients-p (poly p)
@@ -72,6 +75,13 @@
       (equal poly nil)
     (and (pf-element-p (car poly) p)
          (pf-poly-coefficients-p (cdr poly) p))))
+
+; If the coefficients of the polynomial poly belong to the prime field then so
+; do the coefficients of the trimmed polynomial.
+(defthm pf-poly-coefficients-p-of-pf-poly-trim
+  (implies (pf-poly-coefficients-p x p)
+           (pf-poly-coefficients-p (pf-poly-trim x) p))
+  :hints (("Goal" :induct (pf-poly-trim x))))
 
 ; Is poly a pf-polynomial? For this to be the case,
 ; poly must be a list, with coefficients in the field and it must already
@@ -81,13 +91,22 @@
        (pf-poly-coefficients-p poly p)
        (equal (pf-poly-trim poly) poly)))
 
-; Trims the trailing zeros and normalises the coefficients of the polynomial poly.
+; Trims the trailing zeros and normalises the coefficients of poly.
 (defun pf-poly-normalize (poly p)
   (if (endp poly)
       nil
     (pf-poly-trim
      (cons (pf-normalize (car poly) p)
            (pf-poly-normalize (cdr poly) p)))))
+
+(defthm pf-poly-coefficients-p-of-pf-poly-normalize
+  (implies
+   (and (natp p)
+        (< 1 p))
+   (pf-poly-coefficients-p
+    (pf-poly-normalize x p)
+p)))
+
 
 ; The degree of the polynomial poly. This is 0 for the 0 polynomial.
 (defun pf-poly-degree (poly)
@@ -105,18 +124,29 @@
            (pf-poly-add (if (consp x) (cdr x) nil)
                         (if (consp y) (cdr y) nil) p)))))
 
-; If the coefficients of the polynomial poly belong to the prime field then so
-; do the coefficients of the trimmed polynomial.
-(defthm pf-poly-coefficients-p-of-pf-poly-trim
-  (implies (pf-poly-coefficients-p x p)
-           (pf-poly-coefficients-p (pf-poly-trim x) p))
-  :hints (("Goal" :induct (pf-poly-trim x))))
-
 ; The pf-poly-trim function is idempotent.
 (defthm pf-poly-trim-idempotent
   (equal (pf-poly-trim (pf-poly-trim x))
          (pf-poly-trim x))
   :hints (("Goal" :induct (pf-poly-trim x))))
+
+
+; Trimming before normalization has no effect: normalization trims its result
+; in any case.  This is the bridge between coefficient normalization and the
+; canonical polynomial representation.
+(defthm pf-poly-normalize-of-pf-poly-trim
+  (equal (pf-poly-normalize (pf-poly-trim poly) p)
+         (pf-poly-normalize poly p))
+  :hints (("Goal" :induct (pf-poly-trim poly))))
+
+; Polynomial normalization is idempotent.  The induction handles the
+; coefficient list, PF-NORMALIZE-IDEMPOTENT handles each coefficient, and the
+; preceding theorem removes the extra trim introduced at each recursive step.
+(defthm pf-poly-normalize-idempotent
+  (equal (pf-poly-normalize (pf-poly-normalize poly p) p)
+         (pf-poly-normalize poly p))
+  :hints (("Goal" :induct (pf-poly-normalize poly p))))
+
 
 ; The sum (over the prime field) of two polynomials have coefficients in the
 ; prime field (assuming p is a natural number greater than 1)
@@ -183,6 +213,12 @@
     (pf-poly-add (pf-poly-scale (car x) y p)
                  (cons 0 (pf-poly-mul (cdr x) y p)) p)))
 
+; The product (over the prime field) of two polynomials have coefficients in the
+; prime field (assuming p is a natural number greater than 1)
+(defthm pf-poly-coefficients-p-of-pf-poly-mul
+  (implies (and (natp p) (< 1 p))
+           (pf-poly-coefficients-p (pf-poly-mul x y p) p))
+  :hints (("Goal" :induct (pf-poly-mul x y p))))
 
 ; The leading coefficient of a polynomial (or zero). Not sure if I need this.
 (defun pf-poly-leading-coefficient (modulus p)
@@ -229,6 +265,16 @@
           (1- (pf-poly-degree x))))))
 
 
+(defthm pf-poly-coefficients-p-of-pf-poly-reduce-once
+  (implies
+   (and (natp p)
+        (< 1 p)
+        (pf-poly-coefficients-p x p)
+        (pf-poly-coefficients-p modulus p))
+   (pf-poly-coefficients-p
+    (pf-poly-reduce-once x modulus p)
+    p)))
+
 ; An auxiliary function used in computing the reduction of x modulo modulus.
 ; (assuming modulus is monic)
 (defun pf-poly-mod-aux (x modulus p fuel)
@@ -254,6 +300,42 @@
        (equal
         (pf-poly-mod (pf-poly-mod x modulus p) modulus p)
         (pf-poly-mod x modulus p)) ))
+
+(defthm pf-poly-coefficients-p-of-pf-poly-mod-aux
+  (implies
+   (and (natp p)
+        (< 1 p)
+        (pf-poly-coefficients-p x p)
+        (pf-poly-coefficients-p modulus p))
+   (pf-poly-coefficients-p
+    (pf-poly-mod-aux x modulus p n)
+    p))
+  :hints
+  (("Goal"
+    :induct (pf-poly-mod-aux x modulus p n)
+    :in-theory
+    (e/d (pf-poly-mod-aux)
+         (pf-poly-reduce-once
+          pf-poly-sub
+          pf-poly-add)))))
+
+(defthm pf-poly-coefficients-p-of-pf-poly-mod
+  (implies
+   (and (natp p)
+        (< 1 p))
+   (pf-poly-coefficients-p
+    (pf-poly-mod polynomial modulus p)
+    p))
+  :hints
+  (("Goal"
+    :expand
+    ((pf-poly-mod polynomial modulus p))
+    :in-theory
+    (e/d
+     (pf-poly-coefficients-p-of-pf-poly-mod-aux)
+     (pf-poly-mod-aux
+      pf-poly-normalize)))))
+
 
 ; The degree of x modulo modulus is less than the degree of modulus.
 (defthm degree-of-pf-poly-mod-upper-bound
@@ -364,25 +446,66 @@
                    (ff-modulus field) (ff-characteristic field))
       (pf-normalize (* (ifix x) (ifix y)) (ff-characteristic field))))
 
+(defthm ff-mul-when-extension
+  (implies
+   (equal (ff-kind field) :extension)
+   (equal
+    (ff-mul x y field)
+    (pf-poly-mod
+     (pf-poly-mul x y (ff-characteristic field))
+     (ff-modulus field)
+     (ff-characteristic field))))
+  :hints
+  (("Goal"
+    :in-theory
+    (e/d (ff-mul)
+         (pf-poly-mod
+          pf-poly-mul
+          pf-normalize)))))
+
+
 #|
 (thm
     (implies
      (and (ff-field-p field)
           (ff-element-p x field)
           (ff-element-p y field))
+     
      (if (equal (ff-kind field) :extension)
+         (let ((p (ff-characteristic field))
+               (modulus (ff-modulus field)))
          (implies
           (and 
            (< 1 (pf-poly-degree modulus))
-           (pf-polynomial-p x (ff-characteristic field))
-           (pf-polynomial-p y (ff-characteristic field))
+           (pf-polynomial-p x p)
+           (pf-polynomial-p y p)
            )
           
           (ff-element-p (ff-mul x y field) field)          
 
           )
-         (ff-element-p (ff-mul x y field) field) )))
+         )
+         
+         (ff-element-p (ff-mul x y field) field) ))
+)
+
+
+(thm
+ (implies
+  (and (ff-field-p field)
+       (ff-element-p x field)
+       (ff-element-p y field)
+       (equal (ff-kind field) :extension)
+       (< 1 (pf-poly-degree (ff-modulus field)))
+       (pf-polynomial-p x (ff-characteristic field))
+       (pf-polynomial-p y (ff-characteristic field))
+
+       )
+  (ff-element-p (ff-mul x y field) field)
+  )
+)
 |#
+     
 
 (defun ff-pow (x n field)
   (if (zp n)
