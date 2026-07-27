@@ -20,7 +20,7 @@
 ;; ## Primitive functions for prime fields and polynomials over prime fields.
 ;;
 ;; In this section, we'll fix the field to be F_p for a prime p.
-;; The 'field' here is not yet the data structure we will define later.
+
 
 
 ; Normalizes an element x modulo p, usually reduction of x mod p.
@@ -217,7 +217,7 @@
 ; pf-poly-reduce-once x modulus p
 ; has degree less than the degree of x
 
-(defthm pf-poly-reduce-once-degree
+(defthm degree-pf-poly-reduce-once
   (let* ((x (pf-poly-trim (pf-normalize x p)))
          (modulus (pf-poly-trim (pf-normalize modulus p))))
   (implies
@@ -247,33 +247,31 @@
                    (pf-poly-normalize modulus p)
                    p (len x)))
 
-; pf-poly-mod is idempotent (assuming 
+; pf-poly-mod is idempotent
 (defthm pf-poly-mod-idempotent
     (let* ((x (pf-poly-trim (pf-normalize x p)))
            (modulus (pf-poly-trim (pf-normalize modulus p))))
-      (implies
-       (and
-        (< 1 (pf-poly-degree modulus))
-        (equal (pf-poly-leading-coefficient modulus p) 1)
-        )
-       
        (equal
         (pf-poly-mod (pf-poly-mod x modulus p) modulus p)
-        (pf-poly-mod x modulus p)) )))
+        (pf-poly-mod x modulus p)) ))
 
+; The degree of x modulo modulus is less than the degree of modulus.
+(defthm degree-of-pf-poly-mod-upper-bound
+  (let* ((x (pf-poly-trim (pf-normalize x p)))
+         (modulus (pf-poly-trim (pf-normalize modulus p))))
+  (implies
+   (< 1 (pf-poly-degree modulus))
+   
+   (< (pf-poly-degree (pf-poly-mod x modulus p))
+      (pf-poly-degree modulus)))))
 
-
-;(defthm len-of-pf-poly-mod-upper-bound
-;  (implies (and (consp modulus) (consp x))
-;           (< (len (pf-poly-mod x modulus p))
-;              (len modulus))))
-
-
+; Evaluate the polynomial poly at value x using Horner's rule.
 (defun pf-poly-eval-horner (poly x p)
   (if (endp poly)
       0
     (pf-normalize (+ (car poly)
                      (* x (pf-poly-eval-horner (cdr poly) x p))) p)))
+
 
 (defun pf-poly-has-no-root-below-p (poly p x)
   (if (zp x)
@@ -325,6 +323,11 @@
       (pf-poly-mod x (ff-modulus field) (ff-characteristic field))
     (pf-normalize x (ff-characteristic field))))
 
+; For x to be an element of the given field means either
+; (1) the field is an extension field, x is a pf-polynomial for that field and
+;     the length of x is less than the length of the modulus that defines the
+;     field or
+; (2) the field is a prime field and x is an element of the prime field.
 (defun ff-element-p (x field)
   (if (equal (ff-kind field) :extension)
       (and (pf-polynomial-p x (ff-characteristic field))
@@ -353,7 +356,7 @@
 (defun ff-neg (x field)
   (if (equal (ff-kind field) :extension)
       (pf-poly-neg x (ff-characteristic field))
-    (pf-normalize (- (ifix x)) (ff-characteristic field))))
+      (pf-normalize (- (ifix x)) (ff-characteristic field))))
 
 (defun ff-mul (x y field)
   (if (equal (ff-kind field) :extension)
@@ -362,11 +365,23 @@
       (pf-normalize (* (ifix x) (ifix y)) (ff-characteristic field))))
 
 #|
-(defthm ff-mul-closed
-  (implies (and (ff-field-p field)
-                (ff-element-p x field)
-                (ff-element-p y field))
-(ff-element-p (ff-mul x y field) field)))
+(thm
+    (implies
+     (and (ff-field-p field)
+          (ff-element-p x field)
+          (ff-element-p y field))
+     (if (equal (ff-kind field) :extension)
+         (implies
+          (and 
+           (< 1 (pf-poly-degree modulus))
+           (pf-polynomial-p x (ff-characteristic field))
+           (pf-polynomial-p y (ff-characteristic field))
+           )
+          
+          (ff-element-p (ff-mul x y field) field)          
+
+          )
+         (ff-element-p (ff-mul x y field) field) )))
 |#
 
 (defun ff-pow (x n field)
