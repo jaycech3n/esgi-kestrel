@@ -31,7 +31,7 @@
 
 ; pf-normalize is idempotent
 (defthm pf-normalize-idempotent
- (equal (pf-normalize (pf-normalize x p) p) (pf-normalize x p)))
+ (equal (pf-normalize (pf-normalize x p) p) (pf-normalize x p)))2
 
 ; Is x an element of the prime field?
 ; Returns T if x if x and p are natural numbers with 1 < p and 0 <= x < p.
@@ -147,6 +147,11 @@ p)))
          (pf-poly-normalize poly p))
   :hints (("Goal" :induct (pf-poly-normalize poly p))))
 
+(defthm pf-poly-trim-of-pf-poly-normalize
+  (equal (pf-poly-trim (pf-poly-normalize x p))
+         (pf-poly-normalize x p))
+  :hints (("Goal" :induct (pf-poly-normalize x p))))
+
 
 ; The sum (over the prime field) of two polynomials have coefficients in the
 ; prime field (assuming p is a natural number greater than 1)
@@ -222,15 +227,22 @@ p)))
 
 ; The leading coefficient of a polynomial (or zero). Not sure if I need this.
 (defun pf-poly-leading-coefficient (modulus p)
-  (if (endp modulus) 0
-  (last
-   (pf-poly-trim (pf-normalize modulus p))
-   )))
+  (let ((modulus
+         (pf-poly-trim
+          (pf-poly-normalize modulus p))))
+    (if (endp modulus)
+        0
+      (car (last modulus)))))
 
 
 ; A list of n zeros.
 (defun zeros (n)
   (if (zp n) nil (cons 0 (zeros (1- n)))))
+
+(defun pf-poly-butlast (x)
+  (if (or (endp x) (endp (cdr x)))
+      nil
+    (cons (car x) (pf-poly-butlast (cdr x)))))
 
 ; Returns x - g * modulus, where g is chosen so that
 ; (if modulus is monic and if x and modulus are normalized),
@@ -243,37 +255,144 @@ p)))
          (modulus (pf-poly-trim modulus))
          (shift (nfix (- (len x) (len modulus))))
          (lead (if (endp x) 0 (car (last x)))))
-    (pf-poly-sub x
+    ;; The leading terms cancel because MODULUS is monic.  Construct the
+    ;; remaining difference directly, omitting those two equal leading terms.
+    (pf-poly-sub (pf-poly-butlast x)
                  (append (zeros shift)
-                         (pf-poly-scale lead modulus p))
+                         (pf-poly-scale
+                          lead (pf-poly-butlast modulus) p))
                  p)))
+
+(defthm len-of-pf-poly-butlast
+  (equal (len (pf-poly-butlast x))
+         (if (consp x) (1- (len x)) 0))
+  :hints (("Goal" :induct (pf-poly-butlast x))))
+
+(defthm len-of-zeros
+  (equal (len (zeros n)) (nfix n))
+  :hints (("Goal" :induct (zeros n))))
+
+(defthm len-of-pf-poly-scale-upper-bound
+  (<= (len (pf-poly-scale c x p)) (len x))
+  :rule-classes :linear
+  :hints (("Goal" :induct (pf-poly-scale c x p))))
+
+(defthm len-of-pf-poly-neg-upper-bound
+  (<= (len (pf-poly-neg x p)) (len x))
+  :rule-classes :linear
+  :hints (("Goal" :induct (pf-poly-neg x p))))
+
+(defthm len-of-shifted-scaled-pf-poly-butlast
+  (implies
+   (and (consp x)
+        (consp modulus)
+        (<= (len modulus) (len x)))
+   (< (len
+       (append
+        (zeros (nfix (- (len x) (len modulus))))
+        (pf-poly-scale c (pf-poly-butlast modulus) p)))
+      (len x)))
+  :hints
+  (("Goal"
+    :in-theory (enable nfix))))
+
+(defthm pf-poly-coefficients-p-of-pf-poly-reduce-once
+  (implies
+   (and (natp p)
+        (< 1 p))
+   (pf-poly-coefficients-p
+    (pf-poly-reduce-once x modulus p)
+    p))
+  :hints
+  (("Goal"
+    :in-theory
+    (e/d (pf-poly-reduce-once
+          pf-poly-sub)
+         (pf-poly-add
+          pf-poly-neg
+          pf-poly-scale
+          pf-poly-trim
+          zeros
+          binary-append)))))
+
+(defthm len-of-pf-poly-reduce-once-decreases-raw
+  (implies
+   (and (consp (pf-poly-trim x))
+        (consp (pf-poly-trim modulus))
+        (<= (len (pf-poly-trim modulus))
+            (len (pf-poly-trim x))))
+   (< (len (pf-poly-reduce-once x modulus p))
+      (len (pf-poly-trim x))))
+  :hints
+  (("Goal"
+    :use
+    ((:instance len-of-pf-poly-add-when-inputs-bounded
+                (x (pf-poly-butlast (pf-poly-trim x)))
+                (y (pf-poly-neg
+                    (append
+                     (zeros
+                      (nfix (- (len (pf-poly-trim x))
+                               (len (pf-poly-trim modulus)))))
+                     (pf-poly-scale
+                      (car (last (pf-poly-trim x)))
+                      (pf-poly-butlast (pf-poly-trim modulus))
+                      p))
+                    p))
+                (n (len (pf-poly-trim x))))
+     (:instance len-of-shifted-scaled-pf-poly-butlast
+                (x (pf-poly-trim x))
+                (modulus (pf-poly-trim modulus))
+                (c (car (last (pf-poly-trim x)))))
+     (:instance len-of-pf-poly-neg-upper-bound
+                (x (append
+                    (zeros
+                     (nfix (- (len (pf-poly-trim x))
+                              (len (pf-poly-trim modulus)))))
+                    (pf-poly-scale
+                     (car (last (pf-poly-trim x)))
+                     (pf-poly-butlast (pf-poly-trim modulus))
+                     p)))))
+    :in-theory
+    (e/d (pf-poly-reduce-once
+          pf-poly-sub)
+         (pf-poly-add
+          pf-poly-neg
+          pf-poly-scale
+          pf-poly-trim
+          pf-poly-butlast
+          zeros
+          binary-append
+          nfix
+          len-of-pf-poly-add-when-inputs-bounded)))))
 
 ; If x has degree at least one and if modulus
 ; is a monic polynomial of degree at least one, then
 ; pf-poly-reduce-once x modulus p
 ; has degree less than the degree of x
+(defthm len-of-pf-poly-reduce-once-decreases
+  (let ((x (pf-poly-normalize x p))
+        (modulus (pf-poly-normalize modulus p)))
+    (implies
+     (and (natp p)
+          (< 1 p)
+          (consp x)
+          (consp modulus)
+          (equal (car (last modulus)) 1)
+          (<= (len modulus) (len x)))
+     (< (len (pf-poly-reduce-once x modulus p))
+        (len x))))
+  :hints
+  (("Goal"
+    :use
+    ((:instance len-of-pf-poly-reduce-once-decreases-raw
+                (x (pf-poly-normalize x p))
+                (modulus (pf-poly-normalize modulus p))))
+    :in-theory
+    (disable pf-poly-reduce-once
+             pf-poly-normalize
+             pf-poly-trim
+             len-of-pf-poly-reduce-once-decreases-raw))))
 
-(defthm degree-pf-poly-reduce-once
-  (let* ((x (pf-poly-trim (pf-normalize x p)))
-         (modulus (pf-poly-trim (pf-normalize modulus p))))
-  (implies
-   (and
-    (< 1 (pf-poly-degree x))
-    (< 1 (pf-poly-degree modulus))
-    (equal (pf-poly-leading-coefficient modulus p) 1))
-   (equal (pf-poly-degree (pf-poly-reduce-once x modulus p))
-          (1- (pf-poly-degree x))))))
-
-
-(defthm pf-poly-coefficients-p-of-pf-poly-reduce-once
-  (implies
-   (and (natp p)
-        (< 1 p)
-        (pf-poly-coefficients-p x p)
-        (pf-poly-coefficients-p modulus p))
-   (pf-poly-coefficients-p
-    (pf-poly-reduce-once x modulus p)
-    p)))
 
 ; An auxiliary function used in computing the reduction of x modulo modulus.
 ; (assuming modulus is monic)
@@ -295,8 +414,8 @@ p)))
 
 ; pf-poly-mod is idempotent
 (defthm pf-poly-mod-idempotent
-    (let* ((x (pf-poly-trim (pf-normalize x p)))
-           (modulus (pf-poly-trim (pf-normalize modulus p))))
+    (let* ((x (pf-poly-normalize x p))
+           (modulus (pf-poly-normalize modulus p)))
        (equal
         (pf-poly-mod (pf-poly-mod x modulus p) modulus p)
         (pf-poly-mod x modulus p)) ))
@@ -319,6 +438,17 @@ p)))
           pf-poly-sub
           pf-poly-add)))))
 
+(defthm pf-poly-trim-of-pf-poly-mod-aux
+  (equal
+   (pf-poly-trim (pf-poly-mod-aux x modulus p n))
+   (pf-poly-mod-aux x modulus p n))
+  :hints
+  (("Goal"
+    :induct (pf-poly-mod-aux x modulus p n)
+    :in-theory
+    (e/d (pf-poly-mod-aux)
+         (pf-poly-reduce-once)))))
+
 (defthm pf-poly-coefficients-p-of-pf-poly-mod
   (implies
    (and (natp p)
@@ -336,8 +466,43 @@ p)))
      (pf-poly-mod-aux
       pf-poly-normalize)))))
 
+(defthm pf-poly-trim-of-pf-poly-mod
+  (equal
+   (pf-poly-trim (pf-poly-mod x modulus p))
+   (pf-poly-mod x modulus p))
+  :hints
+  (("Goal"
+    :expand ((pf-poly-mod x modulus p))
+    :in-theory (disable pf-poly-mod-aux))))
+
+(defthm pf-polynomial-p-of-pf-poly-mod
+  (implies
+   (and (natp p)
+        (< 1 p))
+   (pf-polynomial-p
+    (pf-poly-mod x modulus p)
+    p))
+  :hints
+  (("Goal"
+    :in-theory
+    (e/d (pf-polynomial-p)
+         (pf-poly-mod
+          pf-poly-mod-aux
+          pf-poly-coefficients-p
+          pf-poly-trim)))))
+
 
 ; The degree of x modulo modulus is less than the degree of modulus.
+(defthm len-of-pf-poly-mod-upper-bound
+  (implies
+   (and (natp p)
+        (< 1 p)
+        (consp (pf-poly-normalize modulus p))
+        (equal (car (last (pf-poly-normalize modulus p))) 1))
+   (< (len (pf-poly-mod x modulus p))
+      (len (pf-poly-normalize modulus p)))))
+
+#|
 (defthm degree-of-pf-poly-mod-upper-bound
   (let* ((x (pf-poly-trim (pf-normalize x p)))
          (modulus (pf-poly-trim (pf-normalize modulus p))))
@@ -345,7 +510,8 @@ p)))
    (< 1 (pf-poly-degree modulus))
    
    (< (pf-poly-degree (pf-poly-mod x modulus p))
-      (pf-poly-degree modulus)))))
+(pf-poly-degree modulus)))))
+|#
 
 ; Evaluate the polynomial poly at value x using Horner's rule.
 (defun pf-poly-eval-horner (poly x p)
@@ -391,6 +557,24 @@ p)))
                   (equal (len field) 3)
                   (equal (car (last (ff-modulus field))) 1)
                   (pf-irreducible-p (ff-modulus field) p))))))
+
+(defthm natp-of-ff-characteristic
+  (implies
+   (ff-field-p field)
+   (natp (ff-characteristic field)))
+  :hints
+  (("Goal"
+    :in-theory
+    (enable ff-field-p prime-number-p))))
+
+(defthm ff-characteristic-greater-than-one
+  (implies
+   (ff-field-p field)
+   (< 1 (ff-characteristic field)))
+  :hints
+  (("Goal"
+    :in-theory
+    (enable ff-field-p prime-number-p))))
 
 (defun ff-degree (field)
   (if (equal (ff-kind field) :extension)
@@ -455,13 +639,7 @@ p)))
      (pf-poly-mul x y (ff-characteristic field))
      (ff-modulus field)
      (ff-characteristic field))))
-  :hints
-  (("Goal"
-    :in-theory
-    (e/d (ff-mul)
-         (pf-poly-mod
-          pf-poly-mul
-          pf-normalize)))))
+  :hints (("Goal" :in-theory (enable ff-mul))))
 
 
 #|
@@ -488,6 +666,7 @@ p)))
          
          (ff-element-p (ff-mul x y field) field) ))
 )
+|#
 
 
 (thm
@@ -504,7 +683,7 @@ p)))
   (ff-element-p (ff-mul x y field) field)
   )
 )
-|#
+
      
 
 (defun ff-pow (x n field)

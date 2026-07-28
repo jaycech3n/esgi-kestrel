@@ -58,6 +58,14 @@ This direct invariant replaced the earlier indirect test
 `x = ff-normalize(x)`, which made even addition closure depend on proving the
 full idempotence specification of polynomial long division.
 
+For a monic modulus, `pf-poly-reduce-once` constructs the result after the two
+equal leading terms have cancelled: it removes the leading coefficient from
+both the dividend and modulus and subtracts the appropriately shifted, scaled
+tails.  This is extensionally the usual subtraction by a shifted multiple of a
+monic modulus, but exposes the strict length decrease directly to ACL2.
+`len-of-pf-poly-reduce-once-decreases` is proved by bounding the two remaining
+summands below the original dividend length.
+
 ACL2 now proves `ff-add-closed` for every descriptor accepted by `ff-field-p`.
 For prime fields this follows from the standard bounds on `mod`.  For extension
 fields, coefficientwise addition preserves canonical coefficients and cannot

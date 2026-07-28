@@ -79,6 +79,14 @@
 (assert-event
  (equal (pf-poly-mod '(0 0 1) '(1 1 1) 2) '(1 1)))
 
+; One monic long-division step cancels the leading terms explicitly.
+(assert-event
+ (equal (pf-poly-reduce-once '(1 0 0 0 1) '(1 1 1) 2)
+        '(1 0 1 1)))
+(assert-event
+ (equal (pf-poly-reduce-once '(1 1 1) '(1 1 1) 2)
+        nil))
+
 ; -----------------------------------------------------------------------------
 ; Irreducible-polynomial verification and construction
 ; -----------------------------------------------------------------------------
