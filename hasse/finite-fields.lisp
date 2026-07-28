@@ -412,14 +412,6 @@ p)))
                    (pf-poly-normalize modulus p)
                    p (len x)))
 
-; pf-poly-mod is idempotent
-(defthm pf-poly-mod-idempotent
-    (let* ((x (pf-poly-normalize x p))
-           (modulus (pf-poly-normalize modulus p)))
-       (equal
-        (pf-poly-mod (pf-poly-mod x modulus p) modulus p)
-        (pf-poly-mod x modulus p)) ))
-
 (defthm pf-poly-coefficients-p-of-pf-poly-mod-aux
   (implies
    (and (natp p)
@@ -490,28 +482,6 @@ p)))
           pf-poly-mod-aux
           pf-poly-coefficients-p
           pf-poly-trim)))))
-
-
-; The degree of x modulo modulus is less than the degree of modulus.
-(defthm len-of-pf-poly-mod-upper-bound
-  (implies
-   (and (natp p)
-        (< 1 p)
-        (consp (pf-poly-normalize modulus p))
-        (equal (car (last (pf-poly-normalize modulus p))) 1))
-   (< (len (pf-poly-mod x modulus p))
-      (len (pf-poly-normalize modulus p)))))
-
-#|
-(defthm degree-of-pf-poly-mod-upper-bound
-  (let* ((x (pf-poly-trim (pf-normalize x p)))
-         (modulus (pf-poly-trim (pf-normalize modulus p))))
-  (implies
-   (< 1 (pf-poly-degree modulus))
-   
-   (< (pf-poly-degree (pf-poly-mod x modulus p))
-(pf-poly-degree modulus)))))
-|#
 
 ; Evaluate the polynomial poly at value x using Horner's rule.
 (defun pf-poly-eval-horner (poly x p)
@@ -630,62 +600,6 @@ p)))
                    (ff-modulus field) (ff-characteristic field))
       (pf-normalize (* (ifix x) (ifix y)) (ff-characteristic field))))
 
-(defthm ff-mul-when-extension
-  (implies
-   (equal (ff-kind field) :extension)
-   (equal
-    (ff-mul x y field)
-    (pf-poly-mod
-     (pf-poly-mul x y (ff-characteristic field))
-     (ff-modulus field)
-     (ff-characteristic field))))
-  :hints (("Goal" :in-theory (enable ff-mul))))
-
-
-#|
-(thm
-    (implies
-     (and (ff-field-p field)
-          (ff-element-p x field)
-          (ff-element-p y field))
-     
-     (if (equal (ff-kind field) :extension)
-         (let ((p (ff-characteristic field))
-               (modulus (ff-modulus field)))
-         (implies
-          (and 
-           (< 1 (pf-poly-degree modulus))
-           (pf-polynomial-p x p)
-           (pf-polynomial-p y p)
-           )
-          
-          (ff-element-p (ff-mul x y field) field)          
-
-          )
-         )
-         
-         (ff-element-p (ff-mul x y field) field) ))
-)
-|#
-
-
-(thm
- (implies
-  (and (ff-field-p field)
-       (ff-element-p x field)
-       (ff-element-p y field)
-       (equal (ff-kind field) :extension)
-       (< 1 (pf-poly-degree (ff-modulus field)))
-       (pf-polynomial-p x (ff-characteristic field))
-       (pf-polynomial-p y (ff-characteristic field))
-
-       )
-  (ff-element-p (ff-mul x y field) field)
-  )
-)
-
-     
-
 (defun ff-pow (x n field)
   (if (zp n)
       (ff-one field)
@@ -744,3 +658,125 @@ p)))
 
 (defthm ff4-has-four-enumerated-elements
   (equal (len (ff-elements *ff4*)) 4))
+
+
+;;
+;;
+;;
+;;
+;;
+
+
+
+
+#|
+
+(thm
+ (let ((x (pf-poly-normalize x p))
+       (modulus (pf-poly-normalize modulus p)))
+ (implies (consp modulus)
+          (< (len (pf-poly-mod x modulus p)) (len modulus))))
+
+)
+
+
+(thm
+ (implies (consp (pf-poly-normalize modulus p))
+          (< (len (pf-poly-mod (pf-poly-normalize x p)
+                               (pf-poly-normalize modulus p) p))
+             (len (pf-poly-normalize modulus p))))
+ )
+
+
+; pf-poly-mod is idempotent
+(defthm pf-poly-mod-idempotent
+    (let* ((x (pf-poly-normalize x p))
+           (modulus (pf-poly-normalize modulus p)))
+      (implies
+     (and (natp p)
+          (< 1 p)
+          (consp x)
+          (consp modulus)
+          (equal (car (last modulus)) 1)
+          (<= (len modulus) (len x)))
+       (equal
+        (pf-poly-mod (pf-poly-mod x modulus p) modulus p)
+        (pf-poly-mod x modulus p)) )))
+
+
+; The degree of x modulo modulus is less than the degree of modulus.
+(defthm len-of-pf-poly-mod-upper-bound
+  (implies
+   (and (natp p)
+        (< 1 p)
+        (consp (pf-poly-normalize modulus p))
+        (equal (car (last (pf-poly-normalize modulus p))) 1))
+   (< (len (pf-poly-mod x modulus p))
+      (len (pf-poly-normalize modulus p)))))
+
+
+(defthm degree-of-pf-poly-mod-upper-bound
+  (let* ((x (pf-poly-trim (pf-normalize x p)))
+         (modulus (pf-poly-trim (pf-normalize modulus p))))
+  (implies
+   (< 1 (pf-poly-degree modulus))
+   
+   (< (pf-poly-degree (pf-poly-mod x modulus p))
+(pf-poly-degree modulus)))))
+
+
+
+(defthm ff-mul-when-extension
+  (implies
+   (equal (ff-kind field) :extension)
+   (equal
+    (ff-mul x y field)
+    (pf-poly-mod
+     (pf-poly-mul x y (ff-characteristic field))
+     (ff-modulus field)
+     (ff-characteristic field))))
+  :hints (("Goal" :in-theory (enable ff-mul))))
+
+
+
+(thm
+    (implies
+     (and (ff-field-p field)
+          (ff-element-p x field)
+          (ff-element-p y field))
+     
+     (if (equal (ff-kind field) :extension)
+         (let ((p (ff-characteristic field))
+               (modulus (ff-modulus field)))
+         (implies
+          (and 
+           (< 1 (pf-poly-degree modulus))
+           (pf-polynomial-p x p)
+           (pf-polynomial-p y p)
+           )
+          
+          (ff-element-p (ff-mul x y field) field)          
+
+          )
+         )
+         
+         (ff-element-p (ff-mul x y field) field) ))
+)
+
+
+
+(thm
+ (implies
+  (and (ff-field-p field)
+       (ff-element-p x field)
+       (ff-element-p y field)
+       (equal (ff-kind field) :extension)
+       (< 1 (pf-poly-degree (ff-modulus field)))
+       (pf-polynomial-p x (ff-characteristic field))
+       (pf-polynomial-p y (ff-characteristic field))
+
+       )
+  (ff-element-p (ff-mul x y field) field)
+  )
+)
+|#
