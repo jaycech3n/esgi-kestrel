@@ -7,7 +7,10 @@
 ; Mathematical content
 (in-package "HASSE-THM")
 
-(ld "polynomials.lisp")
-(ld "F2.lisp")
 (ld "primes.lisp")
-(ld "finite-fields.lisp")
+(ld "prime-power-order.lisp")
+
+(ld "fields.lisp")
+(ld "polynomials.lisp")
+
+(ld "F2.lisp")

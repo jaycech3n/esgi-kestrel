@@ -1,8 +1,7 @@
 (in-package "HASSE-THM")
 
-(ld "prelude.lisp")
-(ld "F2.lisp")
-(ld "primes.lisp")
+(ld "fields.lisp")
+(ld "prime-power-order.lisp")
 
 ;;; Finite fields
 
@@ -66,5 +65,4 @@
 
 
 ;; Theorems about finite fields
-
 

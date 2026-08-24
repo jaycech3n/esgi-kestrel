@@ -1,16 +1,12 @@
-(in-package "HASSE-THM")
-
-(ld "prelude.lisp")
-
-;;; Univariate polynomials over an unspecified field.
-
+;;; Polynomials over arbitrary fields.
 ;   A polynomial over a field K is simply a list of coefficients,
 ;   each of which is supposed to be an element of K.
 ;   The entry at index k is the coefficient of x^k.
-;
-;   Because the field is arbitrary, every function we write takes
-;   the appropriate required field components as arguments.
 
+(in-package "HASSE-THM")
+
+(ld "prelude.lisp")
+(ld "fields.lisp") ; pulls in the components dm::f0, dm::f+, ... of a generic field.
 
 ; "Constructors" for polynomials
 (defun zeropoly () nil)
@@ -18,8 +14,9 @@
 (defun poly (coeffs) (reverse coeffs))
 
 ; (Removes trailing zeros. f0 is the zero of the field.)
-(defun norm-poly (f0 p) (dropValsFromEnd f0 p))
+(defun norm-poly (p) (dropValsFromEnd (dm::f0) p))
 
-(defun is-zeropoly (f0 p) (endp (norm-poly f0 p)))
+(defun is-zeropoly (p) (endp (norm-poly p)))
 
-(defun deg (f0 p) (pred (len (norm-poly f0 p))))
+(defun deg (p) (pred (len (norm-poly p))))
+
