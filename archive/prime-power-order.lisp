@@ -1,5 +1,3 @@
-(in-package "HASSE-THM")
-
 ;;; Structures in bijection with {0, ..., p^n - 1}
 
 (ld "prelude.lisp")

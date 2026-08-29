@@ -1,6 +1,4 @@
-;; This just exists to import the required results about primes from the books
-
-(in-package "HASSE-THM")
+; This just exists to import the required results about primes from the books
 
 (ld "centaur/fty/package.lsp"           :dir :system)
 (ld "projects/numbers/package.lsp"      :dir :system)
