@@ -6,3 +6,8 @@
 (ld "kestrel/number-theory/package.lsp" :dir :system)
 
 (include-book "kestrel/number-theory/top" :dir :system)
+
+;; Theorems
+
+(defthm prime-implies-integer
+  (implies (dm::primep n) (integerp n)))
