@@ -13,7 +13,16 @@
 
 ;; Lists
 
+(defun nilp (xs) (equal nil xs))
 (defun true-consp (xs) (and (true-listp xs) (consp xs)))
+
+; Because the std book's all-equalp is annoying.
+(defun all-equalp-nofix (v xs)
+  (if (true-listp xs)
+      (if (endp xs)
+          t
+          (and (equal v (first xs)) (all-equalp-nofix v (rest xs))))
+      nil))
 
 (defun last-elem (xs) (first (last xs)))
 

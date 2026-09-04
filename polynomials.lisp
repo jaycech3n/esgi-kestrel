@@ -21,31 +21,24 @@
       (drop-vals-from-end 0 p)
       :error[poly-normed][arg-not-poly))
 
+; Recognizes *any* list of zeroes
 (defun zeropolyp (p)
   (and (polyp p)
-       (endp (poly-normed p))))
+       (all-equalp-nofix 0 p)))
 
 (defun nonzeropolyp (p)
   (and (polyp p)
-       (not (endp (poly-normed p)))))
-
-(defthm zeropolyp-iff
-  (implies (zeropolyp p)
-           (or (endp p)
-               (and (consp p)
-                    (zerop (first p))
-                    (zeropolyp (rest p))))))
-
-(defthm not-zeropolyp-iff-nonzeropolyp
-  (implies (polyp p)
-           (iff (nonzeropolyp p)
-                (not (zeropolyp p)))))
+       (not (all-equalp-nofix 0 p))))
 
 (defun poly-deg (p)
   (let ((q (poly-normed p)))
     (if (endp q)
         :neginf
         (nat-pred (len q)))))
+
+; Multiply by x
+(defun poly*x (p) (cons 0 p))
+
 
 ;; ℤ[x]
 
@@ -55,40 +48,10 @@
 (defun poly-neg (p) (map- p))
 (defun poly- (p q) (poly+ p (poly-neg q)))
 
-(defthm poly+-closed
-  (implies (and (polyp p) (polyp q))
-           (polyp (poly+ p q))))
-
-(defthm poly*-nil
-  (equal (poly* (cons a as) nil)
-         (cons 0 (poly* as nil))))
-
-(defthm scale-polynomial-closed
-  (implies (and (integerp c)
-                (polyp p))
-           (polyp (scale-polynomial p c))))
-
-(defthm cons-polyp-closed
-  (implies (and (integerp a)
-                (polyp p))
-           (polyp (cons a p))))
 
 ;; (ℤ/nℤ)[x]
 
 (defun polymod+ (n p q) (mapmod n (poly+ p q)))
 (defun polymod* (n p q) (mapmod n (poly* p q)))
+(defun polymod-neg (n p) (mapmod n (poly-neg p)))
 (defun polymod- (n p q) (mapmod n (poly- p q)))
-
-(defthm polymod+-closed
-  (implies (and (integerp n)
-                (polyp p)
-                (polyp q))
-           (polyp (polymod+ n p q))))
-
-; (defthm polymod*-closed
-;   (implies (and (integerp n)
-;                 (polyp p)
-;                 (polyp q))
-;            (polyp (polymod* n p q)))
-;   :hints
-;     (("Goal" :induct (len q))))
