@@ -7,6 +7,8 @@
 (include-book "nonstd/polynomials/polynomial-lemmas" :dir :system)
 
 (ld "prelude.lisp")
+(ld "arithmetic.lisp")
+
 
 ;; General
 
@@ -16,34 +18,34 @@
 (defun onepoly () '(1))
 
 ; Removes trailing zeros.
-(defun poly-normed (p)
+(defun poly-trim (p)
   (if (polyp p)
       (drop-vals-from-end 0 p)
-      :error[poly-normed][arg-not-poly))
+      :error[poly-trim][arg-not-poly))
 
 ; Recognizes *any* list of zeroes
 (defun zeropolyp (p)
   (and (polyp p)
-       (all-equalp-nofix 0 p)))
+       (all-equalp 0 p)))
 
 (defun nonzeropolyp (p)
   (and (polyp p)
-       (not (all-equalp-nofix 0 p))))
+       (not (all-equalp 0 p))))
 
 (defun poly-deg (p)
-  (let ((q (poly-normed p)))
+  (let ((q (poly-trim p)))
     (if (endp q)
         :neginf
         (nat-pred (len q)))))
 
-; Multiply by x
-(defun poly*x (p) (cons 0 p))
+(defun raise-deg (n p) (append (repeat n 0) p))
 
 
 ;; ℤ[x]
 
 (defun poly+ (p q) (polynomial-+ p q))
-(defun poly* (p q) (polynomial-* p q))
+(defun poly* (p q) (poly-trim (polynomial-* p q)))
+  ; poly* *needs* to be trimmed to be commutative
 
 (defun poly-neg (p) (map- p))
 (defun poly- (p q) (poly+ p (poly-neg q)))
@@ -51,7 +53,7 @@
 
 ;; (ℤ/nℤ)[x]
 
-(defun polymod+ (n p q) (mapmod n (poly+ p q)))
-(defun polymod* (n p q) (mapmod n (poly* p q)))
-(defun polymod-neg (n p) (mapmod n (poly-neg p)))
-(defun polymod- (n p q) (mapmod n (poly- p q)))
+(defun polymod+ (p q n) (mapmod (poly+ p q) n))
+(defun polymod* (p q n) (mapmod (poly* p q) n))
+(defun polymod-neg (p n) (mapmod (poly-neg p) n))
+(defun polymod- (p q n) (mapmod (poly- p q) n))
