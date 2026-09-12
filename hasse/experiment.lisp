@@ -70,13 +70,15 @@
 )
 
 ;; definition of field from acl2/books/projects/linear/field.lisp
-
-
-(encapsulate (((fp *) => *)                   ;field element recognizer
-              ((f+ * *) => *) ((f* * *) => *) ;addition and multiplication
-	      ((f0) => *) ((f1) => *)         ;identities
-	      ((f- *) => *) ((f/ *) => *))    ;inverses 
-    ;; define finitefield: x is element of a list of field elements			 
+(encapsulate
+  (((fp * *) => *)    ;field elements      
+   ((f+ * * *) => *)  ;addition     
+   ((f* * * *) => *)  ;multiplication      
+   ((f0) => *)		  ;additive identity
+   ((f1) => *)		  ;multiplicative identity
+   ((f- * *) => *)    ;subtraction         
+   ((f/ * *) => *))   ;division      
+ 	;;define integers mod p as local witness
     (local (defun fp (x p)
              (and (integerp x)
                   (<= 0 x)
