@@ -51,7 +51,9 @@
   :rule-classes :type-prescription)
 
 (defthm poly-neg-closed
-  (implies (polyp p) (polyp (poly-neg p))))
+  (implies (polyp p)
+           (polyp (poly-neg p)))
+  :rule-classes :type-prescription)
 
 
 ; --- Algebraic properties ---
@@ -73,10 +75,10 @@
                       (p (scale-poly (first p) q))
                       (q (scale-poly (first q) p))))))
 
-(defthm poly+-poly-neg
+(defthmd poly+-poly-neg
   (equal (poly+ p (poly-neg q)) (poly- p q)))
 
-(defthm mapmod-poly+-mapmod-snd
+(defthmd mapmod-poly+-mapmod-snd
   (implies (and (integerp n) (polyp p) (polyp q))
            (equal (mapmod (poly+ p (mapmod q n)) n)
                   (mapmod (poly+ p q) n))))
@@ -116,6 +118,8 @@
                   (polymod- p q n)))
   :hints
     (("Goal"
-      :use ((:instance mapmod-poly+-mapmod-snd (q (map- q)))
-            (:instance poly-neg-closed (p q))))
+      :use ((:instance mapmod-poly+-mapmod-snd
+                       (q (map- q)))
+            (:instance poly-neg-closed
+                       (p q))))
     ))
