@@ -2,15 +2,11 @@
 ;   A polynomial p ∈ R[x] is simply a list of coefficients.
 ;   The entry at index k is the coefficient of x^k.
 
-; Some basics of polynomials are already defined here
-(include-book "nonstd/polynomials/polynomial-defuns" :dir :system)
-(include-book "nonstd/polynomials/polynomial-lemmas" :dir :system)
-
 (ld "prelude.lisp")
 (ld "arithmetic.lisp")
 
 
-;; General
+;; ℤ[x]
 
 (defun polyp (as) (integer-listp as))
 
@@ -40,12 +36,34 @@
 
 (defun raise-deg (n p) (append (repeat n 0) p))
 
+(defun scale-poly (c p) (map* c p))
 
-;; ℤ[x]
+; Doesn't trim trailing zeros
+(defun poly+ (p q)
+  (cond ((not (and (polyp p) (polyp q)))
+          :error[poly+][p-or-q-not-poly])
+        ((not p) q)
+        ((not q) p)
+        (t
+          (cons (+ (first p) (first q)) (poly+ (rest p) (rest q))))))
 
-(defun poly+ (p q) (polynomial-+ p q))
-(defun poly* (p q) (poly-trim (polynomial-* p q)))
-  ; poly* *needs* to be trimmed to be commutative
+(defun poly* (p q)
+  (cond ((not (and (polyp p) (polyp q)))
+          :error[obv-comm-poly*][p-or-q-not-poly])
+        ((not p) nil)
+        ((not q) nil)
+        (t
+          (let ((a0 (first p)) (as (rest p))
+                (b0 (first q)) (bs (rest q)))
+            (cons (* a0 b0)
+                  (poly+ (poly+ (scale-poly a0 bs)
+                                (scale-poly b0 as))
+                         (raise-deg 1 (poly* as bs)))))
+          ; (poly+ (list (* (first p) (first q)))
+          ; (poly+ (raise-deg 1 (scale-poly (rest q) (first p)))
+          ; (poly+ (raise-deg 1 (scale-poly (rest p) (first q)))
+          ;        (raise-deg 2 (poly* (rest p) (rest q))))))
+          )))
 
 (defun poly-neg (p) (map- p))
 (defun poly- (p q) (poly+ p (poly-neg q)))

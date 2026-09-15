@@ -18,6 +18,7 @@
 (in-theory (disable all-equalp))
 (in-theory (enable repeat))
 
+(defun nilp (xs) (and (true-listp xs) (not xs)))
 (defun true-consp (xs) (and (true-listp xs) (consp xs)))
 
 (defun last-elem (xs) (first (last xs)))
@@ -87,7 +88,9 @@
 
 (defthm append-intlist-closed
   (implies (and (integer-listp xs) (integer-listp ys))
-           (integer-listp (append xs ys))))
+           (integer-listp (append xs ys)))
+  :rule-classes :type-prescription)
 
 (defthm intlist-repeat
-  (implies (and (natp n) (integerp x)) (integer-listp (repeat n x))))
+  (implies (and (natp n) (integerp x)) (integer-listp (repeat n x)))
+  :rule-classes :type-prescription)

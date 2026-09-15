@@ -1,7 +1,11 @@
 (include-book "arithmetic-5/top" :dir :system)
-; (include-book "arithmetic/top-with-meta" :dir :system)
 
 (ld "prelude.lisp")
+
+(defun map* (n xs)
+  (if (consp xs)
+      (cons (* n (first xs)) (map* n (rest xs)))
+      xs))
 
 (defun mod+ (x y n)
   (let ((k (ifix n)))
@@ -38,7 +42,8 @@
 (defthm mapmod-integer-closed
   (implies (and (integerp n)
                 (integer-listp xs))
-           (integer-listp (mapmod xs n))))
+           (integer-listp (mapmod xs n)))
+  :rule-classes :type-prescription)
 
 (defthm mapmod-idem
   (equal (mapmod (mapmod xs n) n) (mapmod xs n)))
