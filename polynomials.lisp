@@ -8,7 +8,7 @@
 
 ;; ℤ[x]
 
-(defun polyp (as) (integer-listp as))
+(defun polyp (coeffs) (integer-listp coeffs))
 
 (defun zeropoly () nil)
 (defun onepoly () '(1))

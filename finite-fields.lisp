@@ -8,40 +8,44 @@
 ; Gihan's branch. (TODO: ask about provenance---which parts were generated,
 ; and with which tool?)
 
-; Representations of finite fields: either prime or an extension
+; Representations of finite fields: either prime or an extension.
+
+; --- Prime fields ---
+; For prime fields we give the characteristic.
 (defun ff-prime (p)
   (if (dm::primep p)
       (list :ff-prime p)
-      :error[ff-prime][p-not-prime])
-  )
+      :error[ff-prime][p-not-prime]))
 
+; For extension fields we give the characteristic and the
+; irreducible modulus (generator of the prime ideal).
 (defun ff-ext (p modulus)
   (if (and (dm::primep p)
-           (nonzeropolyp modulus))
+           (nonzeropolyp modulus)) ; this should be irreducible
       (list :ff-ext p modulus)
-      :error[ff-ext][p-not-prime-or-modulus-not-nonzeropoly))
+      :error[ff-ext][p-not-prime-or-modulus-not-nonzeropoly]))
 
 (defun ff-primep (F)
-  (and (<= 2 (len F))
+  (and (= (len F) 2)
        (equal :ff-prime (first F))
        (dm::primep (second F))))
 
 (defun ff-extp (F)
-  (and (<= 3 (len F))
+  (and (= (len F) 3)
        (equal :ff-ext (first F))
        (dm::primep (second F))
-       (nonzeropolyp (third F))))
+       (nonzeropolyp (third F)))) ; irreducible-polyp
 
 (defun ffp (F) (or (ff-primep F) (ff-extp F)))
 
 (defun ff-kind (F)
-  (if (ffp F) (first F) :error[ff-kind][F-not-ff))
+  (if (ffp F) (first F) :error[ff-kind][F-not-ff]))
 
 (defun ff-char (F)
-  (if (ffp F) (second F) :error[ff-char][F-not-ff))
+  (if (ffp F) (second F) :error[ff-char][F-not-ff]))
 
 (defun ff-modulus (F)
-  (if (ff-extp F) (third F) :error[ff-modulus][F-not-ff-ext))
+  (if (ff-extp F) (third F) :error[ff-modulus][F-not-ff-ext]))
 
 (defun ff-order (F)
   (let ((char (ff-char F)))
@@ -49,15 +53,15 @@
       (:ff-prime char)
       (:ff-ext   (expt char (poly-deg (ff-modulus F)))))))
 
-(defun ff-normed (F x)
-  (let ((char (ff-char F)))
-    (case (ff-kind F)
-      (:ff-prime (mod x char))
-      (:ff-ext   (poly-normed (mapmod char x))))))
+; (defun ff-normed (F x)
+;   (let ((char (ff-char F)))
+;     (case (ff-kind F)
+;       (:ff-prime (mod x char))
+;       (:ff-ext   ?))))
 
 ;; Field operations
 
-; Recognizer for field elements; do not worry about normalizing mod p
+; Recognizer for field elements; do not worry about normalizing
 (defun ff-elemp (F x)
   (case (ff-kind F)
     (:ff-prime (integerp x))
@@ -66,7 +70,11 @@
 ; NOTE! That the operations defined here do not take residue classes
 ; modulo the modulus of an extension finite field!
 ; We do reduce the *coefficients* modulo the characteristic, though.
-; I don't think this affects the provability of the field axioms, 
+; I don't think this affects the provability of the field axioms,
+; but need to check.
+
+; TODO: Check all these definitions. Might have mistakes.
+
 (defun ff+ (F x y)
   (let ((char (ff-char F)))
     (case (ff-kind F)
@@ -110,14 +118,17 @@
 ;; Field axioms
 ;  are satisfied:
 
+#|
+
 (defthm ff+closed
   (implies (and (ffp F) (ff-elemp F x) (ff-elemp F y))
            (ff-elemp F (ff+ F x y)))
-  :hints
-    (("Goal" :use (:instance polymod+-closed
-                             (n (ff-char F))
-                             (p x)
-                             (q y)))))
+  ; :hints
+  ;   (("Goal" :use (:instance polymod+-closed
+  ;                            (n (ff-char F))
+  ;                            (p x)
+  ;                            (q y))))
+    )
 
 (defthm ff*closed
   (implies (and (ffp F) (ff-elemp F x) (ff-elemp F y))
@@ -159,3 +170,6 @@
 ; (defthm ff*inv (implies (and (ffp F) (ff-elemp F x) (not (equal x (ff0 F)))) (equal (ff* F x (ff/ F x)) (ff1 F))))
 ; ;; Distributivity:
 ; (defthm ffdist (implies (and (ffp F) (ff-elemp F x) (ff-elemp F y) (ff-elemp F z)) (equal (ff* F x (ff+ F y z)) (ff+ F (ff* F x y) (ff* F x z)))))
+
+
+|#

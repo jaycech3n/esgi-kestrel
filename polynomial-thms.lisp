@@ -91,12 +91,14 @@
 
 (defthm polymod+-closed
   (implies (and (integerp n) (polyp p) (polyp q))
-           (polyp (polymod+ p q n))))
+           (polyp (polymod+ p q n)))
+  :rule-classes :type-prescription)
 
 (defthm polymod*-closed
   (implies (and (integerp n) (polyp p) (polyp q))
            (polyp (polymod* p q n)))
-  :hints (("Goal" :in-theory (disable poly*))))
+  :hints (("Goal" :in-theory (disable poly*)))
+  :rule-classes :type-prescription)
 
 ; --- Algebraic properties ---
 
