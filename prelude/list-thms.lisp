@@ -1,0 +1,27 @@
+(ld "list-defs.lisp")
+
+; --- rev ---
+
+(defthm rev-all-equal
+  (iff (all-equalp v (rev xs))
+       (all-equalp v xs)))
+
+; --- drop-vals ---
+
+(defthm drop-vals-last-ne-val
+  (implies (not (equal v x))
+           (consp (drop-vals v (append xs (list x)))))
+  :hints (("Goal" :induct (len xs))))
+
+(defthm consp-drop-vals-append
+  (implies (consp (drop-vals v xs))
+           (consp (drop-vals v (append xs ys)))))
+
+(defthm drop-vals-all
+  (implies (all-equalp v xs)
+           (not (drop-vals v xs)))
+  :hints (("Goal" :cases (true-listp xs))))
+
+(defthm drop-vals-from-end-all
+  (implies (all-equalp v xs)
+           (not (drop-vals-from-end v xs))))

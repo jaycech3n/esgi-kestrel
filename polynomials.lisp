@@ -1,77 +1,99 @@
-;;; Univariate polynomials over R := ℤ or ℤ/nℤ.
-;   A polynomial p ∈ R[x] is simply a list of coefficients.
+;;; Univariate polynomials over prime fields ℤ_p := ℤ/pℤ.
+;   A polynomial q ∈ ℤ_p[x] is simply a list of coefficients.
 ;   The entry at index k is the coefficient of x^k.
 
 (ld "prelude.lisp")
-(ld "arithmetic.lisp")
+(ld "prime-fields.lisp")
 
+(defun all-fep (cs p)
+  (declare (xargs :guard (posp p)))
+  (or (nilp cs)
+      (and (true-consp cs)
+           (pfield::fep (first cs) p)
+           (all-fep (rest cs) p))))
 
-;; ℤ[x]
+(defthm cons-all-fep
+  (implies (and (pfield::fep c p)
+                (all-fep cs p))
+           (all-fep (cons c cs) p)))
 
-(defun polyp (coeffs) (integer-listp coeffs))
+(defun polyp (cs p)
+  (declare (xargs :guard (posp p)))
+  (all-fep cs p))
 
 (defun zeropoly () nil)
 (defun onepoly () '(1))
 
 ; Removes trailing zeros.
-(defun poly-trim (p)
-  (if (polyp p)
-      (drop-vals-from-end 0 p)
-      :error[poly-trim][arg-not-poly))
+(defun poly-trim (cs)
+  (drop-vals-from-end 0 cs))
 
 ; Recognizes *any* list of zeroes
-(defun zeropolyp (p)
-  (and (polyp p)
-       (all-equalp 0 p)))
+(defun zeropolyp (cs p)
+  (and (polyp cs p) (all-equalp 0 cs)))
 
-(defun nonzeropolyp (p)
-  (and (polyp p)
-       (not (all-equalp 0 p))))
+(defun nonzeropolyp (cs p)
+  (and (polyp cs p) (not (all-equalp 0 cs))))
 
-(defun poly-deg (p)
-  (let ((q (poly-trim p)))
-    (if (endp q)
-        :neginf
-        (nat-pred (len q)))))
+(defun poly-deg (cs)
+  (let ((ds (poly-trim cs)))
+    (if (endp ds) :neginf (1- (len ds)))))
 
-(defun raise-deg (n p) (append (repeat n 0) p))
+(defun raise-deg (n cs)
+  (declare (xargs :guard (natp n)))
+  (append (repeat n 0) cs))
 
-(defun scale-poly (c p) (map* c p))
+(defun mapmul (c cs p)
+  (declare (xargs :guard (and (posp p)
+                              (pfield::fep c p)
+                              (all-fep cs p))))
+  (if (consp cs)
+      (cons (pfield::mul c (first cs) p) (mapmul c (rest cs) p))
+      nil))
+
+(defthm all-fep-mapmul
+  (implies (posp p)
+           (all-fep (mapmul c cs p) p)))
+
+(defun scale-poly (c cs p)
+  (declare (xargs :guard (and (posp p)
+                              (pfield::fep c p)
+                              (polyp cs p))))
+  (mapmul c cs p))
 
 ; Doesn't trim trailing zeros
-(defun poly+ (p q)
-  (cond ((not (and (polyp p) (polyp q)))
-          :error[poly+][p-or-q-not-poly])
-        ((not p) q)
-        ((not q) p)
-        (t
-          (cons (+ (first p) (first q)) (poly+ (rest p) (rest q))))))
+(defun poly+ (as bs p)
+  (declare (xargs :guard (and (posp p)
+                              (polyp as p)
+                              (polyp bs p))))
+  (cond ((atom as) (true-list-fix bs))
+        ((atom bs) (true-list-fix as))
+        ((and (consp as) (consp bs))
+          (cons (pfield::add (first as) (first bs) p)
+                (poly+ (rest as) (rest bs) p))
+        )))
 
-(defun poly* (p q)
-  (cond ((not (and (polyp p) (polyp q)))
-          :error[obv-comm-poly*][p-or-q-not-poly])
-        ((not p) nil)
-        ((not q) nil)
-        (t
-          (let ((a0 (first p)) (as (rest p))
-                (b0 (first q)) (bs (rest q)))
-            (cons (* a0 b0)
-                  (poly+ (poly+ (scale-poly a0 bs)
-                                (scale-poly b0 as))
-                         (raise-deg 1 (poly* as bs)))))
-          ; (poly+ (list (* (first p) (first q)))
-          ; (poly+ (raise-deg 1 (scale-poly (rest q) (first p)))
-          ; (poly+ (raise-deg 1 (scale-poly (rest p) (first q)))
-          ;        (raise-deg 2 (poly* (rest p) (rest q))))))
-          )))
+(defthm all-fep-poly+
+  (implies (and (posp p) (all-fep as p) (all-fep bs p))
+           (all-fep (poly+ as bs p) p)))
 
+(defun poly* (as bs p)
+  (declare (xargs :guard (and (posp p)
+                              (polyp as p)
+                              (polyp bs p))))
+  (cond ((or (atom as) (atom bs)) nil)
+        ((and (consp as) (consp bs))
+          (let ((a0 (first as)) (aas (rest as))
+                (b0 (first bs)) (bbs (rest bs)))
+            (cons (pfield::mul a0 b0 p)
+                  (poly+ (poly+ (scale-poly a0 bbs p)
+                                (scale-poly b0 aas p)
+                                p)
+                         (raise-deg 1 (poly* aas bbs p))
+                         p)))
+        )))
+
+#|
 (defun poly-neg (p) (map- p))
 (defun poly- (p q) (poly+ p (poly-neg q)))
-
-
-;; (ℤ/nℤ)[x]
-
-(defun polymod+ (p q n) (mapmod (poly+ p q) n))
-(defun polymod* (p q n) (mapmod (poly* p q) n))
-(defun polymod-neg (p n) (mapmod (poly-neg p) n))
-(defun polymod- (p q n) (mapmod (poly- p q) n))
+|#

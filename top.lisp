@@ -1,6 +1,5 @@
 ; (ld "package.lsp")
 
-; Prelude is just utility stuff
 (ld "prelude.lisp")
 
 (ld "arithmetic.lisp")
