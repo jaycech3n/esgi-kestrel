@@ -1,127 +1,110 @@
-(ld "arithmetic.lisp")
 (ld "polynomials.lisp")
 
-;; ==== ℤ[x] ====
+; --- Sanity checks for zeropolyp ---
 
-; A lot of these theorems would also work for
-; polynomials over arbitrary acl2-numbers.
+(defthmd zeropolyp-characterization
+  (implies (and (dm::primep p) (polyp cs p))
+    (iff (zeropolyp cs p)
+         (or (nilp cs)
+             (and (consp cs)
+                  (zerop (first cs))
+                  (zeropolyp (rest cs) p)))))
+  :hints (("Goal" :in-theory (enable repeat)))
+  )
 
-
-; --- Zero polynomials ---
-
-(defthmd zeropolyp-iff
-  (implies (polyp p)
-    (iff (zeropolyp p)
-         (or (not p)
-             (and (consp p)
-                  (zerop (first p))
-                  (zeropolyp (rest p)))))))
-
-(defthmd not-zeropolyp-iff-nonzeropolyp
-  (implies (polyp p)
-    (iff (nonzeropolyp p) (not (zeropolyp p)))))
+(defthmd nonzeropolyp-iff-not-zeropolyp
+  (implies (polyp cs p)
+    (iff (nonzeropolyp cs p) (not (zeropolyp cs p)))))
 
 (defthm poly-trim-zeropoly
-  (implies (zeropolyp p) (nilp (poly-trim p))))
+  (implies (zeropolyp cs p) (nilp (poly-trim cs))))
 
 
 ; --- Closure properties ---
 
 (defthm poly-trim-closed
-  (iff (polyp (poly-trim p)) (polyp p)))
+  (implies (polyp cs p) (polyp (poly-trim cs) p))
+  :rule-classes :type-prescription)
 
 (defthm raise-deg-closed
-  (implies (and (natp n) (polyp p))
-           (polyp (raise-deg n p)))
+  (implies (and (natp n) (posp p) (polyp cs p))
+           (polyp (raise-deg n cs) p))
   :rule-classes :type-prescription)
 
 (defthm scale-poly-closed
-  (implies (and (polyp p) (integerp c))
-           (polyp (scale-poly c p)))
+  (implies (and (posp p) (polyp cs p) (pfield::fep c p))
+           (polyp (scale-poly c cs p) p))
   :rule-classes :type-prescription)
 
 (defthm poly+-closed
-  (implies (and (polyp p) (polyp q))
-           (polyp (poly+ p q)))
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly+ as bs p) p))
   :rule-classes :type-prescription)
 
 (defthm poly*-closed
-  (implies (and (polyp p) (polyp q))
-           (polyp (poly* p q)))
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly* as bs p) p))
   :rule-classes :type-prescription)
 
 (defthm poly-neg-closed
-  (implies (polyp p)
-           (polyp (poly-neg p)))
+  (implies (and (posp p) (polyp cs p))
+           (polyp (poly-neg cs p) p))
+  :rule-classes :type-prescription)
+
+(defthm poly--closed
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly- as bs p) p))
+  :hints (("Goal" :in-theory (disable polyp poly-neg)))
   :rule-classes :type-prescription)
 
 
 ; --- Algebraic properties ---
+
+(defthm raise-deg+
+  (implies (and (natp m) (natp n))
+           (equal (raise-deg m (raise-deg n cs))
+                  (raise-deg (+ m n) cs))))
+
+(defthm poly+-comm
+  (implies (and (polyp as p) (polyp bs p))
+           (equal (poly+ bs as p) (poly+ as bs p))))
+
+(defthm poly+-assoc
+  (equal (poly+ (poly+ as bs p) cs p)
+         (poly+ as (poly+ bs cs p) p)))
 
 (defthmd poly+-unassoc
-  (equal (poly+ p (poly+ q r))
-         (poly+ (poly+ p q) r)))
+  (equal (poly+ as (poly+ bs cs p) p)
+         (poly+ (poly+ as bs p) cs p)))
 
-(defthmd poly+-comm
-  (implies (and (polyp p) (polyp q))
-           (equal (poly+ p q) (poly+ q p))))
+(defthmd raise-deg-dist-poly+
+  (implies (and (natp n)
+                (polyp as p)
+                (polyp bs p))
+           (equal (raise-deg n (poly+ as bs p))
+                  (poly+ (raise-deg n as) (raise-deg n bs) p)))
+  :hints (("Goal" :induct (induct-nat n)
+                  :in-theory (enable repeat))))
 
-(defthmd poly*-comm
-  (implies (and (polyp p) (polyp q))
-           (equal (poly* p q) (poly* q p)))
-  :hints
-    (("Subgoal *1/6''"
-      :use (:instance poly+-comm
-                      (p (scale-poly (first p) q))
-                      (q (scale-poly (first q) p))))))
+(defthmd scale-poly-decomp-as-poly+
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp cs p)
+                (consp cs)) ; Mathematically, this should be `nonzeropolyp cs`
+                           ; but `consp cs` is more general.
+           (equal (scale-poly c cs p)
+                  (poly+ (list (pfield::mul c (first cs) p))
+                         (raise-deg 1 (scale-poly c (rest cs) p))
+                         p))))
 
-(defthmd poly+-poly-neg
-  (equal (poly+ p (poly-neg q)) (poly- p q)))
-
-(defthmd mapmod-poly+-mapmod-snd
-  (implies (and (integerp n) (polyp p) (polyp q))
-           (equal (mapmod (poly+ p (mapmod q n)) n)
-                  (mapmod (poly+ p q) n))))
-
-
-
-;; ==== (ℤ/nℤ)[x] ====
-
-; --- Closure ---
-
-(defthm polymod+-closed
-  (implies (and (integerp n) (polyp p) (polyp q))
-           (polyp (polymod+ p q n)))
-  :rule-classes :type-prescription)
-
-(defthm polymod*-closed
-  (implies (and (integerp n) (polyp p) (polyp q))
-           (polyp (polymod* p q n)))
-  :hints (("Goal" :in-theory (disable poly*)))
-  :rule-classes :type-prescription)
-
-; --- Algebraic properties ---
-
-(defthmd polymod+-comm
-  (implies (and (polyp p) (polyp q))
-           (equal (polymod+ p q n) (polymod+ q p n)))
-  :hints (("Goal" :in-theory (disable poly+)
-                  :use poly+-comm)))
-
-(defthmd polymod*-comm
-  (implies (and (polyp p) (polyp q))
-           (equal (polymod* p q n) (polymod* q p n)))
-  :hints (("Goal" :in-theory (disable poly*)
-                  :use poly*-comm)))
-
-(defthm polymod--equal
-  (implies (and (integerp n) (polyp p) (polyp q))
-           (equal (polymod+ p (polymod-neg q n) n)
-                  (polymod- p q n)))
-  :hints
-    (("Goal"
-      :use ((:instance mapmod-poly+-mapmod-snd
-                       (q (map- q)))
-            (:instance poly-neg-closed
-                       (p q))))
-    ))
+; (defthm poly*-comm
+;   (implies (and (posp p)
+;                 (polyp as p)
+;                 (polyp bs p))
+;            (equal (poly* as bs p) (poly* bs as p)))
+;   ; :hints
+;   ;   (("Goal"
+;   ;     :use ((:instance poly+-unassoc
+;   ;                      ())
+;   ;           (:instance ?))))
+; )

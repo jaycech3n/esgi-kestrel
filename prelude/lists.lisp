@@ -11,10 +11,15 @@
 
 (defun last-elem (xs) (first (last xs)))
 
+; Logically, leaves non-conses untouched
 (defun drop-vals (v xs)
-  (cond ((atom xs) nil) ; treats all atoms as nil
-        ((equal (first xs) v) (drop-vals v (rest xs)))
-        (t xs)))
+  (declare (xargs :guard (true-listp xs)))
+  (if (consp xs)
+      (if (equal (first xs) v)
+          (drop-vals v (rest xs))
+          xs)
+      xs))
 
 (defun drop-vals-from-end (v xs)
+  (declare (xargs :guard (true-listp xs)))
   (rev (drop-vals v (rev xs))))
