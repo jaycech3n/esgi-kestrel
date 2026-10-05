@@ -3,17 +3,20 @@
 
 (defun nilp (xs)
   (declare (xargs :guard t))
-  (and (true-listp xs) (not xs)))
+  (and (true-listp xs) (not (consp xs))))
 
 (defun true-consp (xs)
   (declare (xargs :guard t))
-  (and (true-listp xs) xs))
+  (and (true-listp xs) (consp xs)))
+
+(defun singleton (xs)
+  (declare (xargs :guard t))
+  (and (true-consp xs) (nilp (rest xs))))
 
 (defun last-elem (xs) (first (last xs)))
 
 ; Logically, leaves non-conses untouched
 (defun drop-vals (v xs)
-  (declare (xargs :guard (true-listp xs)))
   (if (consp xs)
       (if (equal (first xs) v)
           (drop-vals v (rest xs))
@@ -21,5 +24,4 @@
       xs))
 
 (defun drop-vals-from-end (v xs)
-  (declare (xargs :guard (true-listp xs)))
   (rev (drop-vals v (rev xs))))

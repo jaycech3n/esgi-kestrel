@@ -7,13 +7,17 @@
 
 (defun polyp (cs p)
   (declare (xargs :guard (posp p)))
-  (all-fep cs p))
+  (pfield::all-fep cs p))
+  ; all-fep ensures that cs is a true list.
 
-(defun zeropoly () nil)
-(defun onepoly () '(1))
+(defun monomialp (cs p)
+  (and (polyp cs p) (singleton cs)))
+
+(defconst *zeropoly* nil)
+(defconst *onepoly* '(1))
 
 ; Removes trailing zeros.
-(defun poly-trim (cs)
+(defun poly-nf (cs)
   (drop-vals-from-end 0 cs))
 
 ; Recognizes *any* list of zeroes
@@ -24,82 +28,71 @@
   (and (polyp cs p) (not (all-equalp 0 cs))))
 
 (defun poly-deg (cs)
-  (let ((ds (poly-trim cs)))
-    (if (endp ds) :neginf (1- (len ds)))))
+  (let ((nf (poly-nf cs)))
+    (if (nilp nf) :neginf (1- (len nf)))))
 
-; TODO: should this be made abstract (i.e. definition disabled)?
 (defun raise-deg (n cs)
   (declare (xargs :guard (natp n)))
   (append (repeat n 0) cs))
 
 (defun scale-poly (c cs p)
-  (declare (xargs
-    :guard (and (posp p)
-                (pfield::fep c p)
-                (polyp cs p))))
-  (mapmul c cs p))
+  (declare (xargs :guard
+    (and (posp p)
+         (pfield::fep c p)
+         (polyp cs p)))
+  )
+  (pfield::mapmul c cs p))
 
 ; Doesn't trim trailing zeros
 (defun poly+ (as bs p)
   (declare (xargs
     :guard (and (posp p)
                 (polyp as p)
-                (polyp bs p))
-  ))
-  (cond ((atom as) (true-list-fix bs))
-        ((atom bs) (true-list-fix as))
-        ((and (consp as) (consp bs))
-          (cons (pfield::add (first as) (first bs) p)
-                (poly+ (rest as) (rest bs) p))
-        )))
+                (polyp bs p)))
+           )
+  (if (and (polyp as p) (polyp bs p))
+      (cond ((atom as) bs)
+            ((atom bs) as)
+            ((and (consp as) (consp bs))
+              (cons (pfield::add (first as) (first bs) p)
+                    (poly+ (rest as) (rest bs) p))))
+      :[poly+]-bad-inputs))
 
-; Needed for the guard condition for poly*
+; Need the following to prove the guard condition for poly*.
+
 (defthm all-fep-poly+
-  (implies (and (posp p) (all-fep as p) (all-fep bs p))
-           (all-fep (poly+ as bs p) p)))
+  (implies (and (posp p)
+                (pfield::all-fep as p)
+                (pfield::all-fep bs p))
+           (pfield::all-fep (poly+ as bs p) p)))
+
+(defun poly*-ind (as bs)
+  (declare (xargs :measure (+ (len as) (len bs))))
+  (cond ((and (consp as) (consp bs))
+         (and (poly*-ind (rest as) (rest bs))
+              (poly*-ind (rest as) bs)
+              (poly*-ind as (rest bs))))
+        (t t)))
 
 (defun poly* (as bs p)
   (declare (xargs
-    :guard (and (posp p)
-                (polyp as p)
-                (polyp bs p))
-  ))
-  (cond ((atom as) nil)
-        ((atom bs) nil)
-        ((and (consp as) (consp bs))
-          (poly+ (scale-poly (first as) bs p)
-                 (raise-deg 1 (poly* (rest as) bs p))
-                 p))))
-
-; (defun poly*-alt-comm (as bs p)
-;   (declare (xargs
-;     :guard (and (posp p)
-;                 (polyp as p)
-;                 (polyp bs p))
-;   ))
-;   (cond ((or (atom as) (atom bs)) nil)
-;         ((and (consp as) (consp bs))
-;           (let ((a0 (first as)) (aas (rest as))
-;                 (b0 (first bs)) (bbs (rest bs)))
-;             (cons (pfield::mul a0 b0 p)
-;                   (poly+ (poly+ (scale-poly a0 bbs p)
-;                                 (scale-poly b0 aas p)
-;                                 p)
-;                          (raise-deg 1 (poly*-alt-comm aas bbs p))
-;                          p)))
-;         )))
+    :guard
+      (and (posp p)
+           (polyp as p)
+           (polyp bs p))
+    :guard-hints
+      (("Goal" :induct (poly*-ind as bs))))
+  )
+  (if (and (polyp as p) (polyp bs p))
+      (cond ((or (atom as) (atom bs)) nil)
+            ((and (consp as) (consp bs))
+              (poly+ (scale-poly (first as) bs p)
+                     (raise-deg 1 (poly* (rest as) bs p))
+                     p)))
+      :[poly*]-bad-inputs))
 
 (defun poly-neg (cs p)
-  (declare (xargs
-    :guard (and (posp p)
-                (polyp cs p))
-  ))
-  (mapneg cs p))
+  (pfield::mapneg cs p))
 
 (defun poly- (as bs p)
-  (declare (xargs
-    :guard (and (posp p)
-                (polyp as p)
-                (polyp bs p))
-  ))
   (poly+ as (poly-neg bs p) p))

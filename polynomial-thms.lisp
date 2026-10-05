@@ -1,29 +1,14 @@
 (ld "polynomials.lisp")
 
-; --- Sanity checks for zeropolyp ---
-
-(defthmd zeropolyp-characterization
-  (implies (and (dm::primep p) (polyp cs p))
-    (iff (zeropolyp cs p)
-         (or (nilp cs)
-             (and (consp cs)
-                  (zerop (first cs))
-                  (zeropolyp (rest cs) p)))))
-  :hints (("Goal" :in-theory (enable repeat)))
-  )
-
-(defthmd nonzeropolyp-iff-not-zeropolyp
-  (implies (polyp cs p)
-    (iff (nonzeropolyp cs p) (not (zeropolyp cs p)))))
-
-(defthm poly-trim-zeropoly
-  (implies (zeropolyp cs p) (nilp (poly-trim cs))))
-
-
 ; --- Closure properties ---
 
-(defthm poly-trim-closed
-  (implies (polyp cs p) (polyp (poly-trim cs) p))
+; `rest` drops the constant term of a polynomial
+(defthm poly-rest-closed
+  (implies (polyp cs p) (polyp (rest cs) p))
+  :rule-classes :type-prescription)
+
+(defthm poly-nf-closed
+  (implies (polyp cs p) (polyp (poly-nf cs) p))
   :rule-classes :type-prescription)
 
 (defthm raise-deg-closed
@@ -65,46 +50,54 @@
            (equal (raise-deg m (raise-deg n cs))
                   (raise-deg (+ m n) cs))))
 
+; (defthm scale-poly-monomial
+;   (implies (and (pfield::fep c p)
+;                 (monomialp cs p))
+;            (equal (scale-poly c cs p)
+;                   (list (pfield::mul c (first cs) p)))))
+
 (defthm poly+-comm
   (implies (and (polyp as p) (polyp bs p))
            (equal (poly+ bs as p) (poly+ as bs p))))
 
 (defthm poly+-assoc
-  (equal (poly+ (poly+ as bs p) cs p)
-         (poly+ as (poly+ bs cs p) p)))
-
-(defthmd poly+-unassoc
-  (equal (poly+ as (poly+ bs cs p) p)
-         (poly+ (poly+ as bs p) cs p)))
-
-(defthmd raise-deg-dist-poly+
-  (implies (and (natp n)
-                (polyp as p)
-                (polyp bs p))
-           (equal (raise-deg n (poly+ as bs p))
-                  (poly+ (raise-deg n as) (raise-deg n bs) p)))
-  :hints (("Goal" :induct (induct-nat n)
-                  :in-theory (enable repeat))))
-
-(defthmd scale-poly-decomp-as-poly+
   (implies (and (posp p)
-                (pfield::fep c p)
-                (polyp cs p)
-                (consp cs)) ; Mathematically, this should be `nonzeropolyp cs`
-                           ; but `consp cs` is more general.
-           (equal (scale-poly c cs p)
-                  (poly+ (list (pfield::mul c (first cs) p))
-                         (raise-deg 1 (scale-poly c (rest cs) p))
-                         p))))
+                (polyp as p)
+                (polyp bs p)
+                (polyp cs p))
+           (equal (poly+ (poly+ as bs p) cs p)
+                  (poly+ as (poly+ bs cs p) p))))
 
-; (defthm poly*-comm
-;   (implies (and (posp p)
+; (defthmd raise-deg-dist-poly+
+;   (implies (and (natp n)
+;                 (posp p)
 ;                 (polyp as p)
 ;                 (polyp bs p))
-;            (equal (poly* as bs p) (poly* bs as p)))
-;   ; :hints
-;   ;   (("Goal"
-;   ;     :use ((:instance poly+-unassoc
-;   ;                      ())
-;   ;           (:instance ?))))
-; )
+;            (equal (raise-deg n (poly+ as bs p))
+;                   (poly+ (raise-deg n as) (raise-deg n bs) p)))
+;   :hints (("Goal" :induct (nat-ind n)
+;                   :in-theory (enable repeat))))
+
+; (defthmd scale-poly-decomp-as-poly+
+;   (implies (and (posp p)
+;                 (pfield::fep c p)
+;                 (polyp cs p)
+;                 (consp cs)) ; Mathematically, this should be `nonzeropolyp cs`
+;                            ; but `consp cs` is more general.
+;            (equal (scale-poly c cs p)
+;                   (poly+ (list (pfield::mul c (first cs) p))
+;                          (raise-deg 1 (scale-poly c (rest cs) p))
+;                          p))))
+
+(defthm poly*-comm
+  (implies (and (posp p)
+                (polyp as p)
+                (polyp bs p))
+           (equal (poly* bs as p) (poly* as bs p)))
+  :hints (
+    ("Goal"
+      :in-theory (disable scale-poly raise-deg)
+      :induct (poly*-ind as bs)
+      :do-not '(eliminate-destructors))
+  )
+)
