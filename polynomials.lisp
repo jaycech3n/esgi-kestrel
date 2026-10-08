@@ -10,11 +10,12 @@
   (pfield::all-fep cs p))
   ; all-fep ensures that cs is a true list.
 
+; (defthm polyp-def
+;   (iff (polyp cs p) (pfield::all-fep cs p))
+;   :hints (("Goal" :expand (polyp cs p))))
+
 (defun monomialp (cs p)
   (and (polyp cs p) (singleton cs)))
-
-(defconst *zeropoly* nil)
-(defconst *onepoly* '(1))
 
 ; Removes trailing zeros.
 (defun poly-nf (cs)
@@ -35,7 +36,7 @@
   (declare (xargs :guard (natp n)))
   (append (repeat n 0) cs))
 
-(defun scale-poly (c cs p)
+(defun poly-scale (c cs p)
   (declare (xargs :guard
     (and (posp p)
          (pfield::fep c p)
@@ -45,11 +46,11 @@
 
 ; Doesn't trim trailing zeros
 (defun poly+ (as bs p)
-  (declare (xargs
-    :guard (and (posp p)
-                (polyp as p)
-                (polyp bs p)))
-           )
+  (declare (xargs :guard
+    (and (posp p)
+         (polyp as p)
+         (polyp bs p)))
+  )
   (if (and (polyp as p) (polyp bs p))
       (cond ((atom as) bs)
             ((atom bs) as)
@@ -86,7 +87,7 @@
   (if (and (polyp as p) (polyp bs p))
       (cond ((or (atom as) (atom bs)) nil)
             ((and (consp as) (consp bs))
-              (poly+ (scale-poly (first as) bs p)
+              (poly+ (poly-scale (first as) bs p)
                      (raise-deg 1 (poly* (rest as) bs p))
                      p)))
       :[poly*]-bad-inputs))

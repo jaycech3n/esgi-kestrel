@@ -1,5 +1,8 @@
 (ld "lists.lisp")
 
+(defthm singleton-len
+  (implies (singleton xs) (equal (len xs) 1)))
+
 (defthm drop-vals-of-append-last-ne
   (implies (not (equal x v))
            (consp (drop-vals v (append xs (list x)))))
