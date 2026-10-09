@@ -1,40 +1,46 @@
-;;; Univariate polynomials over prime fields ℤ_p := ℤ/pℤ.
-;   A polynomial cs ∈ ℤ_p[x] is simply a list of coefficients.
-;   The entry at index k is the coefficient of x^k.
+;;; Univariate polynomials over prime fields ℤₚ := ℤ/pℤ.
 
 (ld "prelude.lisp")
 (ld "prime-fields.lisp")
 
-(defun polyp (cs p)
+; A polynomial cs ∈ ℤₚ[x] is represented by a list of coefficients,
+; where the entry at index k is the coefficient of xᵏ.
+
+; Definition disabled for better abstraction in proofs.
+(defund polyp (cs p)
   (declare (xargs :guard (posp p)))
   (pfield::all-fep cs p))
   ; all-fep ensures that cs is a true list.
 
-; (defthm polyp-def
-;   (iff (polyp cs p) (pfield::all-fep cs p))
-;   :hints (("Goal" :expand (polyp cs p))))
-
 (defun monomialp (cs p)
   (and (polyp cs p) (singleton cs)))
 
-; Removes trailing zeros.
-(defun poly-nf (cs)
-  (drop-vals-from-end 0 cs))
+; Locally reenable `polyp` to implement
+; basic operations and properties.
+(section
+(local (in-theory (enable polyp)))
 
-; Recognizes *any* list of zeroes
+;; ==== Operations ====
+
+; Recognizes *any* list of zeroes.
 (defun zeropolyp (cs p)
   (and (polyp cs p) (all-equalp 0 cs)))
 
 (defun nonzeropolyp (cs p)
   (and (polyp cs p) (not (all-equalp 0 cs))))
 
+; Normalizes a polynomial representation by removing trailing zeros.
+(defun poly-nf (cs)
+  (drop-vals-from-end 0 cs))
+
 (defun poly-deg (cs)
   (let ((nf (poly-nf cs)))
     (if (nilp nf) :neginf (1- (len nf)))))
 
-(defun raise-deg (n cs)
+; Amounts to multiplying cs ∈ ℤₚ[x] by x.
+(defun poly-shift (n cs)
   (declare (xargs :guard (natp n)))
-  (append (repeat n 0) cs))
+  (if (zp n) cs (cons 0 (poly-shift (1- n) cs))))
 
 (defun poly-scale (c cs p)
   (declare (xargs :guard
@@ -88,7 +94,7 @@
       (cond ((or (atom as) (atom bs)) nil)
             ((and (consp as) (consp bs))
               (poly+ (poly-scale (first as) bs p)
-                     (raise-deg 1 (poly* (rest as) bs p))
+                     (poly-shift 1 (poly* (rest as) bs p))
                      p)))
       :[poly*]-bad-inputs))
 
@@ -97,3 +103,61 @@
 
 (defun poly- (as bs p)
   (poly+ as (poly-neg bs p) p))
+
+
+;; === Closure under operations ===
+
+; `rest` "downshifts" a polynomial.
+(defthm polyp-rest
+  (implies (polyp cs p) (polyp (rest cs) p))
+  :rule-classes :type-prescription)
+
+(defthm polyp-nf
+  (implies (polyp cs p) (polyp (poly-nf cs) p))
+  :rule-classes :type-prescription)
+
+(defthm polyp-shift
+  (implies (and (natp n) (posp p) (polyp cs p))
+           (polyp (poly-shift n cs) p))
+  :rule-classes :type-prescription)
+
+(defthm poly-scale-closed
+  (implies (and (posp p) (pfield::fep c p) (polyp cs p))
+           (polyp (poly-scale c cs p) p))
+  :rule-classes :type-prescription)
+
+(defthm poly+-closed
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly+ as bs p) p))
+  :rule-classes :type-prescription)
+
+(defthm poly*-closed
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly* as bs p) p))
+  :rule-classes :type-prescription)
+
+(defthm poly-neg-closed
+  (implies (and (posp p) (polyp cs p))
+           (polyp (poly-neg cs p) p))
+  :rule-classes :type-prescription)
+
+(defthm poly--closed
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly- as bs p) p))
+  :rule-classes :type-prescription)
+
+
+;; ==== Reasoning about polynomials ====
+; Relies on type prescription as well as the rules below.
+
+(defthm polyp-not-consp-is-nil
+  (implies (and (polyp cs p) (not (consp cs)))
+           (equal cs nil))
+  :rule-classes :forward-chaining)
+
+; Fallback:
+(defthm polyp-intro
+  (implies (and (posp p) (pfield::all-fep cs p))
+           (polyp cs p)))
+
+)
