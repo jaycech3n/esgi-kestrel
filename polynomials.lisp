@@ -10,7 +10,6 @@
 (defund polyp (cs p)
   (declare (xargs :guard (posp p)))
   (pfield::all-fep cs p))
-  ; all-fep ensures that cs is a true list.
 
 (defun monomialp (cs p)
   (and (polyp cs p) (singleton cs)))
@@ -37,7 +36,7 @@
   (let ((nf (poly-nf cs)))
     (if (nilp nf) :neginf (1- (len nf)))))
 
-; Amounts to multiplying cs ∈ ℤₚ[x] by x.
+; Let us call multiplying cs ∈ ℤₚ[x] by (powers of) x, "shifting" cs.
 (defun poly-shift (n cs)
   (declare (xargs :guard (natp n)))
   (if (zp n) cs (cons 0 (poly-shift (1- n) cs))))
@@ -107,11 +106,6 @@
 
 ;; === Closure under operations ===
 
-; `rest` "downshifts" a polynomial.
-(defthm polyp-rest
-  (implies (polyp cs p) (polyp (rest cs) p))
-  :rule-classes :type-prescription)
-
 (defthm polyp-nf
   (implies (polyp cs p) (polyp (poly-nf cs) p))
   :rule-classes :type-prescription)
@@ -148,14 +142,55 @@
 
 
 ;; ==== Reasoning about polynomials ====
-; Relies on type prescription as well as the rules below.
+
+; The definition of `polyp` is disabled by default in lieu of more
+; abstract "type" reasoning (by the closure rules above). This is not
+; always enough, and we sometimes still require certain "lower-level"
+; properties of the definition.
+
+; We record these rules here. Some of them are mathematical, and some
+; are more "operational", i.e. have to do with properties of the list
+; representation.
+
+; More type reasoning: `rest` "downshifts" a polynomial.
+(defthm polyp-rest
+  (implies (polyp cs p) (polyp (rest cs) p))
+  :rule-classes :type-prescription)
+
+; This one is a rewrite rule and not a type prescription rule for two reasons:
+; 1. Heuristically, it has to be a rewrite rule for the proof of poly*-comm in
+; polynomial-thms.lisp to go through.
+; 2. In principle, we do not want "type" reasoning to prove `polyp` for low-
+; level properties of the list representations.
+; In reality, (2) is a post-hoc justification of the real reason, which is (1).
+(defthm polyp-cons
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp cs p))
+           (polyp (cons c cs) p)))
+
+; all-fep ensures that cs is a true list.
+(defthm polyp-true-listp
+  (implies (polyp cs p) (true-listp cs))
+  :rule-classes :forward-chaining)
+
+(defthm polyp-first
+  (implies (and (polyp cs p) (consp cs))
+           (pfield::fep (first cs) p))
+  :rule-classes :forward-chaining)
 
 (defthm polyp-not-consp-is-nil
   (implies (and (polyp cs p) (not (consp cs)))
            (equal cs nil))
   :rule-classes :forward-chaining)
 
-; Fallback:
+(defthm consp-poly-scale
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp cs p)
+                (consp cs))
+           (consp (poly-scale c cs p))))
+
 (defthm polyp-intro
   (implies (and (posp p) (pfield::all-fep cs p))
            (polyp cs p)))

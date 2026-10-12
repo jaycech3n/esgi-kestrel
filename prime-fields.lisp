@@ -6,7 +6,6 @@
 (in-package "PFIELD")
 
 ; --- Recognizer of lists of prime field elements ---
-
 ; Used to define polynomials over prime fields.
 
 (defun all-fep (xs p)

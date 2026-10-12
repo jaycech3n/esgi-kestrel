@@ -3,7 +3,7 @@
 
 (defun nilp (xs)
   (declare (xargs :guard t))
-  (and (true-listp xs) (not (consp xs))))
+  (and (true-listp xs) (atom xs)))
 
 (defun true-consp (xs)
   (declare (xargs :guard t))
@@ -11,7 +11,7 @@
 
 (defun singleton (xs)
   (declare (xargs :guard t))
-  (and (true-consp xs) (nilp (rest xs))))
+  (and (consp xs) (nilp (rest xs))))
 
 (defun last-elem (xs) (first (last xs)))
 

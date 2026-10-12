@@ -2,16 +2,21 @@
 
 ;; ==== Algebraic properties ====
 
+; --- ... of basic operations ---
+; i.e. shifting and scaling.
+
 (defthm poly-shift+
   (implies (and (natp m) (natp n))
            (equal (poly-shift m (poly-shift n cs))
                   (poly-shift (+ m n) cs))))
 
-; Unsure if this should be disabled by default.
-(defthm poly-scale-monomials-comm
-  (implies (and (monomialp as p) (monomialp bs p))
-           (equal (poly-scale (first bs) as p)
-                  (poly-scale (first as) bs p))))
+(defthm poly-scale-monomial
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (monomialp cs p))
+           (equal (poly-scale c cs p)
+                  (list (pfield::mul c (first cs) p)))))
+
 
 ; --- Addition ---
 
@@ -19,7 +24,7 @@
 ; *in its representation via the nil list*:
 ; it is *not* the case that zs + cs = cs or cs + zs = cs
 ; for an arbitrary representation zs of the zero polynomial!
-; However, we have the following useful equalities:
+; However, we have the following two useful equalities:
 
 (defthm poly+-lunit-len-1
   (implies (and (posp p)
@@ -48,6 +53,7 @@
                   (poly+ as (poly+ bs cs p) p)))
   :hints (("Goal" :in-theory (enable polyp))))
 
+
 ; --- Multiplication ---
 
 (defthm poly*-comm
@@ -55,12 +61,6 @@
                 (polyp as p)
                 (polyp bs p))
            (equal (poly* bs as p) (poly* as bs p)))
-  :hints (
-    ("Goal"
-      :in-theory (e/d ()
-                      (poly-scale poly-shift))
-      :induct (poly*-ind as bs)
-      ; :do-not '(eliminate-destructors)
-      )
-  )
-)
+  :hints (("Goal"
+    :induct (poly*-ind as bs)
+    :do-not '(eliminate-destructors generalize))))
