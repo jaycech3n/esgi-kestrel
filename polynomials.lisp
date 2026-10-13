@@ -36,11 +36,6 @@
   (let ((nf (poly-nf cs)))
     (if (nilp nf) :neginf (1- (len nf)))))
 
-; Let us call multiplying cs ∈ ℤₚ[x] by (powers of) x, "shifting" cs.
-(defun poly-shift (n cs)
-  (declare (xargs :guard (natp n)))
-  (if (zp n) cs (cons 0 (poly-shift (1- n) cs))))
-
 (defun poly-scale (c cs p)
   (declare (xargs :guard
     (and (posp p)
@@ -48,6 +43,11 @@
          (polyp cs p)))
   )
   (pfield::mapmul c cs p))
+
+; Let us call multiplying cs ∈ ℤₚ[x] by (powers of) x, "shifting" cs.
+(defun poly-shift (n cs)
+  (declare (xargs :guard (natp n)))
+  (if (zp n) cs (cons 0 (poly-shift (1- n) cs))))
 
 ; Doesn't trim trailing zeros
 (defun poly+ (as bs p)

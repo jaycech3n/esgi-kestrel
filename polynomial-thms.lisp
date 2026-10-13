@@ -5,17 +5,17 @@
 ; --- ... of basic operations ---
 ; i.e. shifting and scaling.
 
-(defthm poly-shift+
-  (implies (and (natp m) (natp n))
-           (equal (poly-shift m (poly-shift n cs))
-                  (poly-shift (+ m n) cs))))
-
 (defthm poly-scale-monomial
   (implies (and (posp p)
                 (pfield::fep c p)
                 (monomialp cs p))
            (equal (poly-scale c cs p)
                   (list (pfield::mul c (first cs) p)))))
+
+(defthm poly-shift+
+  (implies (and (natp m) (natp n))
+           (equal (poly-shift m (poly-shift n cs))
+                  (poly-shift (+ m n) cs))))
 
 
 ; --- Addition ---
@@ -53,6 +53,33 @@
                   (poly+ as (poly+ bs cs p) p)))
   :hints (("Goal" :in-theory (enable polyp))))
 
+(defthm poly-scale-dist-poly+
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp as p)
+                (polyp bs p))
+           (equal (poly-scale c (poly+ as bs p) p)
+                  (poly+ (poly-scale c as p)
+                         (poly-scale c bs p) p))))
+
+(defthm poly-shift-dist-poly+
+  (implies (and (natp n)
+                (posp p)
+                (pfield::fep c p)
+                (polyp as p)
+                (polyp bs p))
+           (equal (poly-shift n (poly+ as bs p))
+                  (poly+ (poly-shift n as)
+                         (poly-shift n bs) p)))
+  :hints (("Goal" :induct (nat-ind n))))
+
+; Will this cause problems if left enabled?
+(defthm swap-start-of-poly+-poly+
+  (implies (and (posp p)
+                (polyp as p) (polyp bs p) (polyp cs p))
+           (equal (poly+ bs (poly+ as cs p) p)
+                  (poly+ as (poly+ bs cs p) p))))
+
 
 ; --- Multiplication ---
 
@@ -64,3 +91,41 @@
   :hints (("Goal"
     :induct (poly*-ind as bs)
     :do-not '(eliminate-destructors generalize))))
+
+(defthm poly*-dist-poly+-l
+  (implies (and (posp p)
+                (polyp as p)
+                (polyp bs p)
+                (polyp cs p))
+           (equal (poly* as (poly+ bs cs p) p)
+                  (poly+ (poly* as bs p)
+                         (poly* as cs p) p)))
+  :hints (("Goal"
+    :in-theory (disable poly-scale poly-shift)
+    :induct (len as)
+    :do-not '(eliminate-destructors))))
+
+(defthm poly*-assoc
+  (implies (and (posp p)
+                (polyp as p)
+                (polyp bs p)
+                (polyp cs p))
+           (equal (poly* (poly* as bs p) cs p)
+                  (poly* as (poly* bs cs p) p)))
+  :hints (("Goal"
+    :in-theory (disable poly-scale poly-shift)
+    :do-not '(eliminate-destructors)
+  )))
+
+
+#|
+
+Induction on as?
+
+LHS:
+
+(poly+
+  (poly-scale a0 bs)
+  (poly-shift 1 (poly* ar bs)))
+
+|#
