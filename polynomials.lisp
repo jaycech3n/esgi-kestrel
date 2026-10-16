@@ -65,7 +65,6 @@
       :[poly+]-bad-inputs))
 
 ; Need the following to prove the guard condition for poly*.
-
 (defthm all-fep-poly+
   (implies (and (posp p)
                 (pfield::all-fep as p)
@@ -149,8 +148,8 @@
 ; properties of the definition.
 
 ; We record these rules here. Some of them are mathematical, and some
-; are more "operational", i.e. have to do with properties of the list
-; representation.
+; are more "operational" and abstraction-breaking, i.e. have to do
+; with properties of the list representation.
 
 ; More type reasoning: `rest` "downshifts" a polynomial.
 (defthm polyp-rest
@@ -184,13 +183,7 @@
            (equal cs nil))
   :rule-classes :forward-chaining)
 
-(defthm consp-poly-scale
-  (implies (and (posp p)
-                (pfield::fep c p)
-                (polyp cs p)
-                (consp cs))
-           (consp (poly-scale c cs p))))
-
+; "Fallback":
 (defthm polyp-intro
   (implies (and (posp p) (pfield::all-fep cs p))
            (polyp cs p)))
