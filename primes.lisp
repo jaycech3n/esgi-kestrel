@@ -9,5 +9,6 @@
 
 ;; Theorems
 
-(defthm prime-implies-integer
-  (implies (dm::primep n) (integerp n)))
+; (defthm prime-implies-integer
+;   (implies (dm::primep n) (integerp n))
+;   :rule-classes :type-prescription)

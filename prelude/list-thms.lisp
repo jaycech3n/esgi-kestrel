@@ -3,12 +3,16 @@
 (defthm singleton-len
   (implies (singleton xs) (equal (len xs) 1)))
 
+(defthm drop-vals-consp-first
+  (implies (consp (drop-vals v xs))
+           (not (equal (first (drop-vals v xs)) v))))
+
 (defthm drop-vals-of-append-last-ne
   (implies (not (equal x v))
            (consp (drop-vals v (append xs (list x)))))
   :hints (("Goal" :induct (len xs))))
 
-(defthm consp-drop-vals-iff
+(defthm consp-drop-vals-of-rev-iff
   (implies (true-listp xs)
     (iff (consp (drop-vals v (rev xs)))
          (consp (drop-vals v xs)))))

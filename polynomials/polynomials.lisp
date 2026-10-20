@@ -1,17 +1,17 @@
 ;;; Univariate polynomials over prime fields ℤₚ := ℤ/pℤ.
 
-(ld "prelude.lisp")
-(ld "prime-fields.lisp")
+(ld "../prelude.lisp")
+(ld "../prime-fields.lisp")
 
-; A polynomial cs ∈ ℤₚ[x] is represented by a list of coefficients,
-; where the entry at index k is the coefficient of xᵏ.
+; A polynomial cs ∈ ℤₚ[x] is represented by a "little endian" list of
+; coefficients, where the entry at index k is the coefficient of xᵏ.
 
 ; Definition disabled for better abstraction in proofs.
 (defund polyp (cs p)
   (declare (xargs :guard (posp p)))
   (pfield::all-fep cs p))
 
-(defun monomialp (cs p)
+(defun constpolyp (cs p)
   (and (polyp cs p) (singleton cs)))
 
 ; Locally reenable `polyp` to implement
@@ -32,9 +32,10 @@
 (defun poly-nf (cs)
   (drop-vals-from-end 0 cs))
 
+; We say the degree of the zero polynomial is -1 (instead of -∞).
 (defun poly-deg (cs)
   (let ((nf (poly-nf cs)))
-    (if (nilp nf) :neginf (1- (len nf)))))
+    (if (nilp nf) -1 (1- (len nf)))))
 
 (defun poly-scale (c cs p)
   (declare (xargs :guard
@@ -97,9 +98,14 @@
       :[poly*]-bad-inputs))
 
 (defun poly-neg (cs p)
+  (declare (xargs :guard (and (posp p) (polyp cs p))))
   (pfield::mapneg cs p))
 
 (defun poly- (as bs p)
+  (declare (xargs :guard
+    (and (posp p)
+         (polyp as p)
+         (polyp bs p))))
   (poly+ as (poly-neg bs p) p))
 
 

@@ -37,10 +37,10 @@
 ; in the middle of other proofs.
 (defthm poly-scale-nil (equal (poly-scale c nil p) nil))
 
-(defthm poly-scale-monomial
+(defthm poly-scale-constant
   (implies (and (posp p)
                 (pfield::fep c p)
-                (monomialp cs p))
+                (constpolyp cs p))
            (equal (poly-scale c cs p)
                   (list (pfield::mul c (first cs) p)))))
 
