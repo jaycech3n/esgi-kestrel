@@ -8,17 +8,28 @@
 ; abstraction boundaries. But at this stage the payoff
 ; doesn't seem worth it.
 
+(defthm consp-poly-shift-consp
+  (implies (and (natp n)
+                (consp cs))
+           (consp (poly-shift n cs))))
+
+(defrule consp-poly-shift-pos
+  (implies (posp n)
+           (consp (poly-shift n cs)))
+  :induct (nat-ind n))
+
 (defthm consp-poly-scale
   (implies (and (posp p)
                 (polyp cs p)
                 (consp cs))
            (consp (poly-scale c cs p))))
 
-(defthm consp-poly+
+(defrule consp-poly+
   (implies (and (posp p)
                 (polyp as p) (polyp bs p)
                 (consp as) (consp bs))
-           (consp (poly+ as bs p))))
+           (consp (poly+ as bs p)))
+  :enable poly+)
 
 (defthm consp-poly*
   (implies (and (posp p)
@@ -88,38 +99,22 @@
 
 ; --- Addition ---
 
-; The unit for addition is the zero polynomial
-; *in its representation via the nil list*:
-; it is *not* the case that zs + cs = cs or cs + zs = cs
-; for an arbitrary representation zs of the zero polynomial!
-; However, we have the following two useful equalities:
+(section
 
-(defthm poly+-lunit-len-1
-  (implies (and (posp p)
-                (polyp cs p)
-                (consp cs))
-           (equal (poly+ '(0) cs p) cs))
-  :hints (("Goal" :in-theory (enable polyp))))
-
-(defthm poly+-runit-len-1
-  (implies (and (posp p)
-                (polyp cs p)
-                (consp cs))
-           (equal (poly+ cs '(0) p) cs))
-  :hints (("Goal" :in-theory (enable polyp))))
+(local (in-theory (enable poly+)))
 
 (defthm poly+-comm
   (implies (and (polyp as p) (polyp bs p))
            (equal (poly+ bs as p) (poly+ as bs p))))
 
-(defthm poly+-assoc
+(defrule poly+-assoc
   (implies (and (posp p)
                 (polyp as p)
                 (polyp bs p)
                 (polyp cs p))
            (equal (poly+ (poly+ as bs p) cs p)
                   (poly+ as (poly+ bs cs p) p)))
-  :hints (("Goal" :in-theory (enable polyp))))
+  :enable polyp)
 
 (defthm poly-scale-dist-poly+
   (implies (and (posp p)
@@ -130,7 +125,7 @@
                   (poly+ (poly-scale c as p)
                          (poly-scale c bs p) p))))
 
-(defthm poly-shift-dist-poly+
+(defrule poly-shift-dist-poly+
   (implies (and (natp n)
                 (posp p)
                 (pfield::fep c p)
@@ -139,7 +134,7 @@
            (equal (poly-shift n (poly+ as bs p))
                   (poly+ (poly-shift n as)
                          (poly-shift n bs) p)))
-  :hints (("Goal" :induct (nat-ind n))))
+  :induct (nat-ind n))
 
 ; Will this cause problems if left enabled?
 (defthm swap-start-of-poly+-poly+
@@ -183,6 +178,44 @@
            (equal (rest (poly+ as (poly-shift 1 bs) p))
                   (poly+ (rest as) bs p))))
 
+; The unit for addition is the zero polynomial
+; *in its representation via the nil list*:
+; it is *not* the case that zs + cs = cs or cs + zs = cs
+; for an arbitrary representation zs of the zero polynomial!
+; However, we have the following two useful equalities:
+
+(defrule poly+-lunit-len-1
+  (implies (and (posp p)
+                (polyp cs p)
+                (consp cs))
+           (equal (poly+ '(0) cs p) cs))
+  :enable polyp)
+
+(defrule poly+-runit-len-1
+  (implies (and (posp p)
+                (polyp cs p)
+                (consp cs))
+           (equal (poly+ cs '(0) p) cs))
+  :enable polyp)
+
+(defruled poly+-lunit
+  (implies (and (posp p)
+                (zeropolyp zs p)
+                (polyp cs p)
+                (<= (len zs) (len cs)))
+           (equal (poly+ zs cs p) cs))
+  :enable (polyp repeat))
+
+)
+
+(defruled poly+-runit
+  (implies (and (posp p)
+                (zeropolyp zs p)
+                (polyp cs p)
+                (<= (len zs) (len cs)))
+           (equal (poly+ cs zs p) cs))
+  :enable poly+-lunit)
+
 
 ; --- Multiplication ---
 
@@ -196,16 +229,16 @@
 
 ; I think this is indeed the usual direction
 ; we want to normalize in.
-(defthm poly*-poly-scale-l
+(defrule poly*-poly-scale-l
   (implies (and (posp p)
                 (pfield::fep c p)
                 (polyp as p)
                 (polyp bs p))
            (equal (poly* (poly-scale c as p) bs p)
                   (poly-scale c (poly* as bs p) p)))
-  :hints (("Goal" :in-theory (disable poly-scale poly-shift))))
+  :disable (poly-scale poly-shift))
 
-(defthm poly*-dist-poly+-l
+(defrule poly*-dist-poly+-l
   (implies (and (posp p)
                 (polyp as p)
                 (polyp bs p)
@@ -213,33 +246,31 @@
            (equal (poly* as (poly+ bs cs p) p)
                   (poly+ (poly* as bs p)
                          (poly* as cs p) p)))
-  :hints (("Goal"
-    :in-theory (disable poly-scale poly-shift)
-    :induct (len as)
-    :do-not '(eliminate-destructors)))
-  )
+  :enable poly+
+  :disable (poly-scale poly-shift)
+  :induct (len as)
+  :do-not '(eliminate-destructors))
 
-(defthm poly*-comm
+(defrule poly*-comm
   (implies (and (posp p)
                 (polyp as p)
                 (polyp bs p))
            (equal (poly* bs as p) (poly* as bs p)))
-  :hints (("Goal"
-    :induct (poly*-ind as bs)
-    :do-not '(eliminate-destructors generalize))))
+  :enable poly+
+  :induct (poly*-ind as bs)
+  :do-not '(eliminate-destructors generalize))
 
-(defthm poly*-poly-scale-r
+(defrule poly*-poly-scale-r
   (implies (and (posp p)
                 (pfield::fep c p)
                 (polyp as p)
                 (polyp bs p))
            (equal (poly* as (poly-scale c bs p) p)
                   (poly-scale c (poly* as bs p) p)))
-  :hints (("Goal"
-    :in-theory (disable poly-scale poly-shift)
-    :use ((:instance poly*-comm
-                    (as (poly-scale c bs p))
-                    (bs as))))))
+  :disable (poly-scale poly-shift)
+  :use ((:instance poly*-comm
+                   (as (poly-scale c bs p))
+                   (bs as))))
 
 (defthm poly*-dist-poly+-r
   (implies (and (posp p)
@@ -250,33 +281,29 @@
                   (poly+ (poly* as cs p)
                          (poly* bs cs p) p))))
 
-(section
-
-(local (defthmd rew
-  (implies (and (posp p)
-                (polyp as p)
-                (polyp bs p)
-                (polyp cs p))
-           (equal (poly+ as (poly+ bs cs p) p)
-                  (poly+ (poly+ as cs p) bs p)))))
-
-(defthm poly*-assoc
+(defrule poly*-assoc
   (implies (and (posp p)
                 (polyp as p)
                 (polyp bs p)
                 (polyp cs p))
            (equal (poly* (poly* as bs p) cs p)
                   (poly* as (poly* bs cs p) p)))
+  :prep-lemmas
+    ((defrule rew
+       (implies (and (posp p)
+                     (polyp as p)
+                     (polyp bs p)
+                     (polyp cs p))
+                (equal (poly+ as (poly+ bs cs p) p)
+                       (poly+ (poly+ as cs p) bs p)))))
+  :enable poly+
+  :disable (poly-scale poly-shift poly* poly*-comm)
+  :expand ((poly* (poly* as bs p) cs p)
+           (poly* as (poly* bs cs p) p))
+  :induct (poly*-ind as bs)
+  :do-not '(eliminate-destructors generalize)
   :hints
-    (("Goal"
-       :in-theory (disable poly-scale poly-shift poly*
-                           poly*-comm)
-       :expand ((poly* (poly* as bs p) cs p)
-                (poly* as (poly* bs cs p) p))
-       :induct (poly*-ind as bs)
-       :do-not '(eliminate-destructors generalize)
-     )
-     ("Subgoal *1/1.3"
+    (("Subgoal *1/1.3"
        :expand ((poly* as bs p)
                 (poly* bs cs p))
        :use (:instance rew
@@ -284,7 +311,5 @@
               (bs (poly-shift 1 (poly* (poly* (rest as) bs p) cs p)))
               (cs (poly-shift 1 (poly-scale (first as)
                                             (poly* (rest bs) cs p)
-                                            p))))
-     )))
+                                            p)))))))
 
-)
