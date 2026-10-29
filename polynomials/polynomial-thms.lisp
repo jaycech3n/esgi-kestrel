@@ -38,6 +38,11 @@
            (consp (poly* as bs p)))
   :hints (("Goal" :use consp-poly+)))
 
+(defthm poly-shift-len
+  (implies (natp n)
+           (equal (len (poly-shift n cs))
+                  (+ n (len cs)))))
+
 
 ;; ==== Algebraic properties ====
 
@@ -198,6 +203,8 @@
            (equal (poly+ cs '(0) p) cs))
   :enable polyp)
 
+; The above are special cases of the following more general results:
+
 (defruled poly+-lunit
   (implies (and (posp p)
                 (zeropolyp zs p)
@@ -289,7 +296,7 @@
            (equal (poly* (poly* as bs p) cs p)
                   (poly* as (poly* bs cs p) p)))
   :prep-lemmas
-    ((defrule rew
+    ((defruled rew
        (implies (and (posp p)
                      (polyp as p)
                      (polyp bs p)

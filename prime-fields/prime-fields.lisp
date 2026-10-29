@@ -54,3 +54,10 @@
            (cons (pfield::add (first as) (first bs) p)
                  (zipadd (rest as) (rest bs) p))))))
 
+(defun zipsub (as bs p)
+  (declare (xargs :guard
+    (and (posp p)
+         (all-fep as p)
+         (all-fep bs p)))
+  )
+  (zipadd as (mapneg bs p) p))

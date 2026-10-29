@@ -1,55 +1,38 @@
 (ld "polynomial-thms.lisp")
 
-(section
-
-; Core algorithm, tail recursive with accumulator `qs` for the quotient.
+; Core algorithm, tail recursive with accumulator for the quotient.
 ; Argument requirements:
 ; · `as` and `bs` in big endian,
-; · `qs` in little endian representation of polynomials.
+; · `acc` in little endian representation of polynomials.
 ; · `bs` normalized, i.e. no leading zero.
-(defun poly-div-aux (as bs qs p)
-  (declare (xargs
-    :measure (+ (len as) (len bs))
-    :guard
-      (and (posp p)
-           (pfield::all-fep as p)
-           (pfield::all-fep bs p)
-           (pfield::all-fep qs p)
-           (consp bs)
-           (not (equal (first bs) 0))))
-  )
-  (cond ((atom bs)
-          :[poly-div-aux]-bad-inputs)
-        ((< (len as) (len bs))
-          (list qs as))
-        (t
-          (let*
-            (( q (pfield::div (first as) (first bs) p))
-             (ns (pfield::zipadd
-                  (rest as)
-                  (pfield::mapneg (pfield::mapmul q (rest bs) p) p)
-                  p)))
-            (poly-div-aux ns bs (cons q qs) p)))))
+(define poly-div-aux (as bs acc p)
+  :enabled t
+  :measure (+ (len as) (len bs))
+  :guard (and (posp p)
+              (pfield::all-fep as p)
+              (pfield::all-fep bs p)
+              (pfield::all-fep acc p)
+              (consp bs)
+              (not (equal (first bs) 0)))
+  (cond ( (atom bs) :[poly-div-aux]-bad-inputs )
+        ( (< (len as) (len bs)) (list acc as) )
+        ( t
+          (let* ((q  (pfield::div (first as) (first bs) p))
+                 (cs (pfield::zipsub (rest as)
+                                      (pfield::mapmul q (rest bs) p)
+                                      p)))
+            (poly-div-aux cs bs (cons q acc) p)))))
 
-(defthm poly-div-aux-len
-  (implies (and (posp p)
-                (pfield::all-fep as p)
-                (pfield::all-fep bs p)
-                (pfield::all-fep qs p)
-                (consp bs)
-                (not (equal (first bs) 0)))
-           (equal (len (poly-div-aux as bs qs p)) 2)))
-
+; Need this for the guard condition of poly-div.
 (defthm poly-div-aux-consp
   (implies (and (posp p)
                 (pfield::all-fep as p)
                 (pfield::all-fep bs p)
-                (pfield::all-fep qs p)
+                (pfield::all-fep acc p)
                 (consp bs)
                 (not (equal (first bs) 0)))
-           (consp (poly-div-aux as bs qs p))))
+           (consp (poly-div-aux as bs acc p))))
 
-; Assumes inputs are in big endian.
 ; Returns a pair containing the quotient and remainder.
 (defun poly-div (as bs p)
   (declare (xargs :guard
@@ -62,10 +45,20 @@
      (ds (drop-vals 0 (rev bs))))
     (if (atom ds)
         :[poly-div]-bad-input
-        ; (poly-div-aux cs ds nil p)
         (let ((ret (poly-div-aux cs ds nil p)))
           (list (first ret)
-                (rev (drop-vals 0 (second ret)))))
-        )))
+                (rev (drop-vals 0 (second ret))))))
+  ))
 
-)
+; (defthm poly-div-correct
+;   (implies (and (posp p)
+;                 (polyp as p)
+;                 (polyp bs p)
+;                 (nonzeropolyp bs p))
+;            (let*
+;              ((res (poly-div as bs p))
+;               (qs (first res))
+;               (rs (second res)))
+;              (equal (poly+ (poly* qs bs p) rs p)
+;                     as)))
+;   :hints (("Goal" :induct (len as))))

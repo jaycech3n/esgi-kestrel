@@ -56,3 +56,11 @@
 (defthm zipadd-len
   (equal (len (zipadd as bs p))
          (max (len as) (len bs))))
+
+
+; --- Equalities ---
+
+(defthmd mapmul-0
+  (equal (mapmul 0 cs p)
+         (acl2::repeat (len cs) 0))
+  :hints (("Goal" :in-theory (enable acl2::repeat))))

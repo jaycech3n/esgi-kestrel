@@ -125,37 +125,37 @@
 
 (defthm polyp-nf
   (implies (polyp cs p) (polyp (poly-nf cs) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
 (defthm polyp-shift
   (implies (and (natp n) (posp p) (polyp cs p))
            (polyp (poly-shift n cs) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
 (defthm poly-scale-closed
   (implies (and (posp p) (pfield::fep c p) (polyp cs p))
            (polyp (poly-scale c cs p) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
 (defthm poly+-closed
   (implies (and (posp p) (polyp as p) (polyp bs p))
            (polyp (poly+ as bs p) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
 (defthm poly*-closed
   (implies (and (posp p) (polyp as p) (polyp bs p))
            (polyp (poly* as bs p) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
 (defthm poly-neg-closed
   (implies (and (posp p) (polyp cs p))
            (polyp (poly-neg cs p) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
 (defthm poly--closed
   (implies (and (posp p) (polyp as p) (polyp bs p))
            (polyp (poly- as bs p) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
 
 ;; ==== Reasoning about polynomials ====
@@ -172,14 +172,11 @@
 ; More type reasoning: `rest` "downshifts" a polynomial.
 (defthm polyp-rest
   (implies (polyp cs p) (polyp (rest cs) p))
-  :rule-classes :type-prescription)
+  :rule-classes (:rewrite :type-prescription))
 
-; This one is a rewrite rule and not a type prescription rule for two reasons:
-; 1. Heuristically, it has to be a rewrite rule for the proof of poly*-comm in
-; polynomial-thms.lisp to go through.
-; 2. In principle, we do not want "type" reasoning to prove `polyp` for low-
+; This one is only a rewrite rule and not a type prescription rule
+; because we do not want "type" reasoning to prove `polyp` for low-
 ; level properties of the list representations.
-; In reality, (2) is a post-hoc justification of the real reason, which is (1).
 (defthm polyp-cons
   (implies (and (posp p)
                 (pfield::fep c p)
