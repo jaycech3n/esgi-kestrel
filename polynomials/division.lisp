@@ -34,21 +34,18 @@
            (consp (poly-div-aux as bs acc p))))
 
 ; Returns a pair containing the quotient and remainder.
-(defun poly-div (as bs p)
-  (declare (xargs :guard
-    (and (posp p)
-         (pfield::all-fep as p)
-         (pfield::all-fep bs p)))
-  )
-  (let ; Convert little -> big endian, and normalize divisor.
-    ((cs (rev as))
-     (ds (drop-vals 0 (rev bs))))
+; Here `as` and `bs` are little endian.
+(define poly-div (as bs p)
+  :guard (and (posp p)
+              (pfield::all-fep as p)
+              (pfield::all-fep bs p))
+  (let ((ds (drop-vals 0 (rev bs)))) ; Normalize divisor.
     (if (atom ds)
         :[poly-div]-bad-input
-        (let ((ret (poly-div-aux cs ds nil p)))
+        (let* ((cs (rev as))
+               (ret (poly-div-aux cs ds nil p)))
           (list (first ret)
-                (rev (drop-vals 0 (second ret))))))
-  ))
+                (rev (drop-vals 0 (second ret))))))))
 
 ; (defthm poly-div-correct
 ;   (implies (and (posp p)

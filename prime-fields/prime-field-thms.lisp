@@ -64,3 +64,12 @@
   (equal (mapmul 0 cs p)
          (acl2::repeat (len cs) 0))
   :hints (("Goal" :in-theory (enable acl2::repeat))))
+
+(defthmd mapmul-append
+  (equal (mapmul c (append as bs) p)
+         (append (mapmul c as p) (mapmul c bs p))))
+
+(defthmd rev-mapmul
+  (equal (acl2::rev (mapmul c cs p))
+         (mapmul c (acl2::rev cs) p))
+  :hints (("Goal" :in-theory (enable acl2::repeat mapmul-append))))

@@ -4,9 +4,8 @@
 
 ; i.e., abstraction-breaking.
 ; Annoying but they do occasionally appear in proofs,
-; which probably means we could engineer some better
-; abstraction boundaries. But at this stage the payoff
-; doesn't seem worth it.
+; which likely means we could...
+; TODO: engineer some better abstraction boundaries.
 
 (defthm consp-poly-shift-consp
   (implies (and (natp n)
@@ -42,6 +41,26 @@
   (implies (natp n)
            (equal (len (poly-shift n cs))
                   (+ n (len cs)))))
+
+; --- Properties involving rev ---
+
+; If (polyp as p) holds, (rev as) may be seen
+; as the *big endian* representation of as. We
+; collect some required properties of (rev as)
+; here; though what we really should do in the
+; future is to...
+; TODO: have separate type membership predicates
+; for little and big endian polynomials, and
+; hide `rev` behind an abstraction that converts
+; endianness.
+
+(defrule rev-poly-scale
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp cs p))
+           (equal (rev (poly-scale c cs p))
+                  (poly-scale c (rev cs) p)))
+  :enable pfield::rev-mapmul)
 
 
 ;; ==== Algebraic properties ====
