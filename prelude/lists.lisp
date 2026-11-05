@@ -9,9 +9,13 @@
   (declare (xargs :guard t))
   (and (true-listp xs) (consp xs)))
 
-(defun singleton (xs)
+(defun singletonp (xs)
   (declare (xargs :guard t))
   (and (consp xs) (nilp (rest xs))))
+
+(defun pairp (xs)
+  (declare (xargs :guard t))
+  (and (true-listp xs) (equal (len xs) 2)))
 
 (defun last-elem (xs) (first (last xs)))
 

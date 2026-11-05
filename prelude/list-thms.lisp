@@ -1,7 +1,7 @@
 (ld "lists.lisp")
 
 (defthm singleton-len
-  (implies (singleton xs) (equal (len xs) 1)))
+  (implies (singletonp xs) (equal (len xs) 1)))
 
 (defthm drop-vals-consp-first
   (implies (consp (drop-vals v xs))

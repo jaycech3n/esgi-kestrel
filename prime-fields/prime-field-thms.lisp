@@ -44,7 +44,6 @@
                 (all-fep bs p))
            (all-fep (zipadd as bs p) p)))
 
-
 ; --- Lengths ---
 
 (defthm mapmul-len
@@ -57,19 +56,23 @@
   (equal (len (zipadd as bs p))
          (max (len as) (len bs))))
 
-
 ; --- Equalities ---
 
-(defthmd mapmul-0
+(defthm mapmul-0-all-equal-0
+  (acl2::all-equalp 0 (mapmul 0 cs p))
+  :hints (("Goal" :in-theory (disable acl2::all-equalp))))
+
+(defthmd mapmul-0-eq-repeat-0
   (equal (mapmul 0 cs p)
          (acl2::repeat (len cs) 0))
   :hints (("Goal" :in-theory (enable acl2::repeat))))
 
-(defthmd mapmul-append
+(defthmd mapmul-append-eq-append-mapmuls
   (equal (mapmul c (append as bs) p)
          (append (mapmul c as p) (mapmul c bs p))))
 
-(defthmd rev-mapmul
+(defthmd rev-mapmul-eq-mapmul-rev
   (equal (acl2::rev (mapmul c cs p))
          (mapmul c (acl2::rev cs) p))
-  :hints (("Goal" :in-theory (enable acl2::repeat mapmul-append))))
+  :hints (("Goal"
+    :in-theory (enable acl2::repeat mapmul-append-eq-append-mapmuls))))

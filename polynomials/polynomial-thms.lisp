@@ -1,5 +1,93 @@
 (ld "polynomials.lisp")
 
+(section
+
+(local (in-theory (enable polyp)))
+
+;; === Closure under operations ===
+
+(defthm polyp-nf
+  (implies (polyp cs p) (polyp (poly-nf cs) p))
+  :rule-classes (:rewrite :type-prescription))
+
+(defthm polyp-shift
+  (implies (and (natp n) (posp p) (polyp cs p))
+           (polyp (poly-shift n cs) p))
+  :rule-classes (:rewrite :type-prescription))
+
+(defthm poly-scale-closed
+  (implies (and (posp p) (pfield::fep c p) (polyp cs p))
+           (polyp (poly-scale c cs p) p))
+  :rule-classes (:rewrite :type-prescription))
+
+(defthm poly+-closed
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly+ as bs p) p))
+  :rule-classes (:rewrite :type-prescription))
+
+(defthm poly*-closed
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly* as bs p) p))
+  :rule-classes (:rewrite :type-prescription))
+
+(defthm poly-neg-closed
+  (implies (and (posp p) (polyp cs p))
+           (polyp (poly-neg cs p) p))
+  :rule-classes (:rewrite :type-prescription))
+
+(defthm poly--closed
+  (implies (and (posp p) (polyp as p) (polyp bs p))
+           (polyp (poly- as bs p) p))
+  :rule-classes (:rewrite :type-prescription))
+
+
+;; ==== Reasoning about polynomials ====
+
+; The definition of `polyp` is disabled by default in lieu of more
+; abstract "type" reasoning (by the closure rules above). This is not
+; always enough, and we sometimes still require certain "lower-level"
+; properties of the definition.
+
+; We record these rules here. Some of them are mathematical, and some
+; are more "operational" and abstraction-breaking, i.e. have to do
+; with properties of the list representation.
+
+; More type reasoning: `rest` "downshifts" a polynomial.
+(defthm polyp-rest
+  (implies (polyp cs p) (polyp (rest cs) p))
+  :rule-classes (:rewrite :type-prescription))
+
+; This one is only a rewrite rule and not a type prescription rule
+; because we do not want "type" reasoning to prove `polyp` for low-
+; level properties of the list representations.
+(defthm polyp-cons
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp cs p))
+           (polyp (cons c cs) p)))
+
+; all-fep ensures that cs is a true list.
+(defthm polyp-true-listp
+  (implies (polyp cs p) (true-listp cs))
+  :rule-classes :forward-chaining)
+
+(defthm polyp-first
+  (implies (and (polyp cs p) (consp cs))
+           (pfield::fep (first cs) p))
+  :rule-classes :forward-chaining)
+
+(defthm polyp-not-consp-is-nil
+  (implies (and (polyp cs p) (not (consp cs)))
+           (equal cs nil))
+  :rule-classes :forward-chaining)
+
+; "Fallback":
+(defthm polyp-intro
+  (implies (and (posp p) (pfield::all-fep cs p))
+           (polyp cs p)))
+
+)
+
 ;; ==== Operational properties ====
 
 ; i.e., abstraction-breaking.
@@ -60,7 +148,7 @@
                 (polyp cs p))
            (equal (rev (poly-scale c cs p))
                   (poly-scale c (rev cs) p)))
-  :enable pfield::rev-mapmul)
+  :enable pfield::rev-mapmul-eq-mapmul-rev)
 
 
 ;; ==== Algebraic properties ====
@@ -339,3 +427,38 @@
                                             (poly* (rest bs) cs p)
                                             p)))))))
 
+; Multiplying by monomials
+(defrule poly*-by-constpoly-l
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp cs p))
+           (equal (poly* (list c) cs p)
+                  (poly-scale c cs p)))
+  :enable poly+)
+
+(defrule poly*-by-constpoly-r
+  (implies (and (posp p)
+                (pfield::fep c p)
+                (polyp cs p))
+           (equal (poly* cs (list c) p)
+                  (poly-scale c cs p)))
+  :disable poly*)
+
+(defrule poly*-by-monomial
+  (implies (and (natp n)
+                (posp p)
+                (pfield::fep c p)
+                (polyp cs p)
+                (consp cs))
+           (equal (poly* (monomial n c) cs p)
+                  (poly-shift n (poly-scale c cs p))))
+  :induct (nat-ind n)
+  :hints
+    (("Subgoal *1/1'"
+       :do-not-induct t
+       :expand (poly-shift n (list c))
+       :in-theory (disable poly*-comm))
+     ("Subgoal *1/1''"
+       :use (:instance poly+-lunit
+              (zs (pfield::mapmul 0 cs p))
+              (cs (cons 0 (poly-shift (1- n) (pfield::mapmul c cs p))))))))
