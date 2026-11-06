@@ -1,27 +1,29 @@
-(ld "polynomial-thms.lisp")
+(ld "big-endian.lisp")
 
 ; Core algorithm, tail recursive with accumulator for the quotient.
 ; Argument requirements:
-; · `as` and `bs` in big endian,
+; · `ax` and `bx` in big endian,
 ; · `acc` in little endian representation of polynomials.
-; · `bs` normalized, i.e. no leading zero.
-(define poly-div-aux (as bs acc p)
+; · (coeffs bx) normalized, i.e. no leading zero.
+(define poly-div-aux (ax bx acc p)
   :enabled t
-  :measure (+ (len as) (len bs))
+  :measure (+ (len (coeffs ax)) (len (coeffs bx)))
   :guard (and (posp p)
-              (pfield::all-fep as p)
-              (pfield::all-fep bs p)
-              (pfield::all-fep acc p)
-              (consp bs)
-              (not (equal (first bs) 0)))
-  (cond ( (atom bs) :[poly-div-aux]-bad-inputs )
-        ( (< (len as) (len bs)) (list acc as) )
-        ( t
-          (let* ((q  (pfield::div (first as) (first bs) p))
-                 (cs (pfield::zipsub (rest as)
-                                      (pfield::mapmul q (rest bs) p)
-                                      p)))
-            (poly-div-aux cs bs (cons q acc) p)))))
+              (bigpolyp ax p)
+              (nonzero-normal-bigpolyp bx p)
+              (polyp acc p))
+  (let ((as (coeffs ax))
+        (bs (coeffs bx)))
+    (cond ( (atom bs) :[poly-div-aux]-bad-inputs )
+          ( (< (len as) (len bs)) (list acc as) )
+          ( t
+            (let* ((q  (pfield::div (first as) (first bs) p))
+                   (cs (pfield::zipsub (rest as)
+                                       (pfield::mapmul q (rest bs) p)
+                                       p)))
+              (poly-div-aux cs bs (cons q acc) p))))))
+
+#|
 
 ; Need this for the guard condition of poly-div.
 (defthm poly-div-aux-consp
@@ -59,3 +61,5 @@
 ;              (equal (poly+ (poly* qs bs p) rs p)
 ;                     as)))
 ;   :hints (("Goal" :induct (len as))))
+
+|#
