@@ -16,7 +16,7 @@
 ; Definition disabled for better abstraction in proofs.
 (define polyp (cs p)
   :guard (posp p)
-  (pfield::all-fep cs p))
+  (pfieldlist::all-fep cs p))
 
 (defun constpolyp (cs p)
   (and (polyp cs p) (singletonp cs)))
@@ -49,7 +49,7 @@
   :guard (and (posp p)
               (pfield::fep c p)
               (polyp cs p))
-  (pfield::mapmul c cs p))
+  (pfieldlist::scale c cs p))
 
 ; Let us call multiplying cs ∈ ℤₚ[x] by (powers of) x, "shifting" cs.
 (define poly-shift (n cs)
@@ -79,9 +79,9 @@
 ; Need the following to prove the guard condition for poly*.
 (defrule all-fep-poly+
   (implies (and (posp p)
-                (pfield::all-fep as p)
-                (pfield::all-fep bs p))
-           (pfield::all-fep (poly+ as bs p) p))
+                (pfieldlist::all-fep as p)
+                (pfieldlist::all-fep bs p))
+           (pfieldlist::all-fep (poly+ as bs p) p))
   :enable poly+)
 
 (define poly*-ind (as bs)
@@ -110,7 +110,7 @@
 (define poly-neg (cs p)
   :enabled t
   :guard (and (posp p) (polyp cs p))
-  (pfield::mapneg cs p))
+  (pfieldlist::neg cs p))
 
 (define poly- (as bs p)
   :enabled t

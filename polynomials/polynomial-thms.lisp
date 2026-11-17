@@ -83,7 +83,7 @@
 
 ; "Fallback":
 (defthm polyp-intro
-  (implies (and (posp p) (pfield::all-fep cs p))
+  (implies (and (posp p) (pfieldlist::all-fep cs p))
            (polyp cs p)))
 
 )
@@ -148,7 +148,7 @@
                 (polyp cs p))
            (equal (rev (poly-scale c cs p))
                   (poly-scale c (rev cs) p)))
-  :enable pfield::rev-mapmul-eq-mapmul-rev)
+  :enable pfieldlist::rev-scale-eq-scale-rev)
 
 
 ;; ==== Algebraic properties ====
@@ -460,5 +460,5 @@
        :in-theory (disable poly*-comm))
      ("Subgoal *1/1''"
        :use (:instance poly+-lunit
-              (zs (pfield::mapmul 0 cs p))
-              (cs (cons 0 (poly-shift (1- n) (pfield::mapmul c cs p))))))))
+              (zs (pfieldlist::scale 0 cs p))
+              (cs (cons 0 (poly-shift (1- n) (pfieldlist::scale c cs p))))))))

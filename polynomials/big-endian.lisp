@@ -14,7 +14,7 @@
   :guard (posp p)
   (and (pairp cx)
        (eql (first cx) :big-endian)
-       (pfield::all-fep (second cx) p)))
+       (pfieldlist::all-fep (second cx) p)))
 
 (define coeffs (cx)
   :enabled t

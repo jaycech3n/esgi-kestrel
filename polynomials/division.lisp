@@ -18,8 +18,8 @@
           ( (< (len as) (len bs)) (list acc as) )
           ( t
             (let* ((q  (pfield::div (first as) (first bs) p))
-                   (cs (pfield::zipsub (rest as)
-                                       (pfield::mapmul q (rest bs) p)
+                   (cs (pfieldlist::sub (rest as)
+                                       (pfieldlist::scale q (rest bs) p)
                                        p)))
               (poly-div-aux cs bs (cons q acc) p))))))
 
@@ -28,9 +28,9 @@
 ; Need this for the guard condition of poly-div.
 (defthm poly-div-aux-consp
   (implies (and (posp p)
-                (pfield::all-fep as p)
-                (pfield::all-fep bs p)
-                (pfield::all-fep acc p)
+                (pfieldlist::all-fep as p)
+                (pfieldlist::all-fep bs p)
+                (pfieldlist::all-fep acc p)
                 (consp bs)
                 (not (equal (first bs) 0)))
            (consp (poly-div-aux as bs acc p))))
@@ -39,8 +39,8 @@
 ; Here `as` and `bs` are little endian.
 (define poly-div (as bs p)
   :guard (and (posp p)
-              (pfield::all-fep as p)
-              (pfield::all-fep bs p))
+              (pfieldlist::all-fep as p)
+              (pfieldlist::all-fep bs p))
   (let ((ds (dropvals 0 (rev bs)))) ; Normalize divisor.
     (if (atom ds)
         :[poly-div]-bad-input
