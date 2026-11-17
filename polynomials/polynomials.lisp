@@ -14,7 +14,6 @@
 ; efficiency/proof ease tradeoff.
 
 ; Definition disabled for better abstraction in proofs.
-; TOOD: convert uses of `defun` to `define`?
 (define polyp (cs p)
   :guard (posp p)
   (pfield::all-fep cs p))
@@ -38,7 +37,7 @@
 
 ; Normalizes a polynomial representation by removing trailing zeros.
 (defun poly-nf (cs)
-  (drop-vals-from-end 0 cs))
+  (dropvals-from-end 0 cs))
 
 ; We say the degree of the zero polynomial is -1 (instead of -∞).
 (defun poly-deg (cs)

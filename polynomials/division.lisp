@@ -41,13 +41,13 @@
   :guard (and (posp p)
               (pfield::all-fep as p)
               (pfield::all-fep bs p))
-  (let ((ds (drop-vals 0 (rev bs)))) ; Normalize divisor.
+  (let ((ds (dropvals 0 (rev bs)))) ; Normalize divisor.
     (if (atom ds)
         :[poly-div]-bad-input
         (let* ((cs (rev as))
                (ret (poly-div-aux cs ds nil p)))
           (list (first ret)
-                (rev (drop-vals 0 (second ret))))))))
+                (rev (dropvals 0 (second ret))))))))
 
 ; (defthm poly-div-correct
 ;   (implies (and (posp p)

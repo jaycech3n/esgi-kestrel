@@ -2,6 +2,3 @@
 (ld "prelude/lists.lisp")
 (ld "prelude/list-thms.lisp")
 (ld "prelude/util.lisp")
-
-(defmacro section (&rest content)
-  (cons 'encapsulate (cons 'nil content)))

@@ -26,9 +26,9 @@
            (all-fep (acl2::repeat n x) p))
   :hints (("Goal" :in-theory (enable acl2::repeat))))
 
-(defthm all-fep-drop-vals
+(defthm all-fep-dropvals
   (implies (all-fep xs p)
-           (all-fep (acl2::drop-vals v xs) p)))
+           (all-fep (acl2::dropvals v xs) p)))
 
 (defthm all-fep-mapmul
   (implies (posp p)

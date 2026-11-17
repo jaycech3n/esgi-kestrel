@@ -3,25 +3,25 @@
 (defthm singleton-len
   (implies (singletonp xs) (equal (len xs) 1)))
 
-(defthm drop-vals-consp-first
-  (implies (consp (drop-vals v xs))
-           (not (equal (first (drop-vals v xs)) v))))
+(defthm dropvals-consp-first
+  (implies (consp (dropvals v xs))
+           (not (equal (first (dropvals v xs)) v))))
 
-(defthm drop-vals-of-append-last-ne
+(defthm dropvals-of-append-last-ne
   (implies (not (equal x v))
-           (consp (drop-vals v (append xs (list x)))))
+           (consp (dropvals v (append xs (list x)))))
   :hints (("Goal" :induct (len xs))))
 
-(defthm consp-drop-vals-of-rev-iff
+(defthm consp-dropvals-of-rev-iff
   (implies (true-listp xs)
-    (iff (consp (drop-vals v (rev xs)))
-         (consp (drop-vals v xs)))))
+    (iff (consp (dropvals v (rev xs)))
+         (consp (dropvals v xs)))))
 
-(defthm drop-vals-all
+(defthm dropvals-all
   (implies (all-equalp v xs)
-           (not (consp (drop-vals v xs)))) ; `not consp`, and not `nilp`!
+           (not (consp (dropvals v xs)))) ; `not consp`, and not `nilp`!
   :hints (("Goal" :cases (true-listp xs))))
 
-(defthm drop-vals-from-end-all
+(defthm dropvals-from-end-all
   (implies (all-equalp v xs)
-           (nilp (drop-vals-from-end v xs))))
+           (nilp (dropvals-from-end v xs))))

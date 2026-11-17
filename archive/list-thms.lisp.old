@@ -6,22 +6,22 @@
   (iff (all-equalp v (rev xs))
        (all-equalp v xs)))
 
-; --- drop-vals ---
+; --- dropvals ---
 
-(defthm drop-vals-last-ne-val
+(defthm dropvals-last-ne-val
   (implies (not (equal x v))
-           (consp (drop-vals v (append xs (list x)))))
+           (consp (dropvals v (append xs (list x)))))
   :hints (("Goal" :induct (len xs))))
 
-(defthm consp-drop-vals-append
-  (implies (consp (drop-vals v xs))
-           (consp (drop-vals v (append xs ys)))))
+(defthm consp-dropvals-append
+  (implies (consp (dropvals v xs))
+           (consp (dropvals v (append xs ys)))))
 
-(defthm drop-vals-all
+(defthm dropvals-all
   (implies (all-equalp v xs)
-           (not (drop-vals v xs)))
+           (not (dropvals v xs)))
   :hints (("Goal" :cases (true-listp xs))))
 
-(defthm drop-vals-from-end-all
+(defthm dropvals-from-end-all
   (implies (all-equalp v xs)
-           (not (drop-vals-from-end v xs))))
+           (not (dropvals-from-end v xs))))

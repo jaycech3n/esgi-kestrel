@@ -13,19 +13,19 @@
     (iff (integer-listp (rev xs))
          (integer-listp xs))))
 
-; --- drop-vals ---
+; --- dropvals ---
 
-(defthm intlist-drop-vals
-  (implies (not (integer-listp (drop-vals v xs)))
+(defthm intlist-dropvals
+  (implies (not (integer-listp (dropvals v xs)))
            (not (integer-listp xs))))
 
-(defthm drop-vals-intlist-closed
+(defthm dropvals-intlist-closed
   (implies (integer-listp xs)
-           (integer-listp (drop-vals v xs))))
+           (integer-listp (dropvals v xs))))
 
-(defthm drop-vals-from-end-intlist-closed
+(defthm dropvals-from-end-intlist-closed
   (implies (integer-listp xs)
-           (integer-listp (drop-vals-from-end v xs))))
+           (integer-listp (dropvals-from-end v xs))))
 
 ; --- append ---
 
